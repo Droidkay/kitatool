@@ -54,11 +54,30 @@ async function latencySample(signal, timeoutMs = 2000) {
   }
 }
 
+/** "Lagos (LOS)" — also cleans up results saved by older versions, where colo was an object. */
+function placeOf(m) {
+  if (!m) return '';
+  const c = m.colo;
+  const obj = c && typeof c === 'object' ? c : null;
+  const code = obj ? (obj.iata || obj.code || '') : (c || '');
+  const city = (typeof m.city === 'string' && m.city) || (obj && obj.city) || '';
+  return city && code ? `${city} (${code})` : String(city || code);
+}
+
 async function fetchMeta() {
   try {
     const r = await fetch(`${BASE}/meta`, { cache: 'no-store' });
     const o = await r.json();
-    return { ip: o.clientIp || '', isp: o.asOrganization || '', city: o.city || '', country: o.country || '', colo: o.colo || '' };
+    // Fields can arrive as plain strings or as objects (e.g. colo: { iata: 'LOS', city: 'Lagos', … }).
+    const str = (v) => (typeof v === 'string' || typeof v === 'number') ? String(v) : '';
+    const colo = o.colo && typeof o.colo === 'object' ? o.colo : {};
+    return {
+      ip: str(o.clientIp),
+      isp: str(o.asOrganization),
+      city: str(o.city) || str(colo.city),
+      country: str(o.country) || str(colo.cca2) || str(colo.country),
+      colo: str(o.colo) || str(colo.iata) || str(colo.code),
+    };
   } catch (e) {
     try {
       const t = await (await fetch(`${BASE}/cdn-cgi/trace`, { cache: 'no-store' })).text();
@@ -524,7 +543,7 @@ async function startTest() {
 
 function renderMeta() {
   const m = state.meta;
-  if (m && (m.isp || m.colo)) $('subline').textContent = [m.isp, [m.city, m.colo].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  if (m && (m.isp || m.colo)) $('subline').textContent = [m.isp, placeOf(m)].filter(Boolean).join(' · ');
 }
 
 function showResult(r) {
@@ -563,7 +582,7 @@ function showResult(r) {
   const rows = [['Network', r.net.type]];
   if (r.net.effective) rows.push(['Browser estimate', r.net.effective.toUpperCase()]);
   if (m.isp) rows.push(['Provider', m.isp]);
-  if (m.colo) rows.push(['Test server', [m.city, m.colo].filter(Boolean).join(' · ')]);
+  if (m.colo) rows.push(['Test server', placeOf(m)]);
   if (m.ip) rows.push(['Public IP', m.ip.includes(':') ? m.ip.split(':').slice(0, 3).join(':') + ':•••' : m.ip.replace(/\.\d+$/, '.•••')]);
   rows.push(['Data used', `${fmt(r.dataMb)} MB`]);
   $('conn').innerHTML = rows.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${escapeHtml(v)}</b></div>`).join('');

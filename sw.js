@@ -1,6 +1,6 @@
 // Kitatool service worker: caches the app shell so it opens instantly and installs as an app.
 // Speed-test traffic (Cloudflare, AWS) is never cached.
-const CACHE = 'kitatool-v1';
+const CACHE = 'kitatool-v2';
 const SHELL = ['/', '/index.html', '/style.css', '/app.js', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
