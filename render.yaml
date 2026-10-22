@@ -1,0 +1,15 @@
+# One-click setup on Render: New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: kitatool-save
+    runtime: docker
+    plan: free
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://kitatool.com,https://www.kitatool.com
+      - key: IG_COOKIES
+        sync: false

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kitatool Save — TikTok & Instagram Downloader</title>
+  <meta name="description" content="Paste a TikTok, Instagram, X, Facebook or Pinterest link and save the video or photos. TikTok without watermark. Free, no sign-up.">
+  <meta name="theme-color" content="#06070B">
+  <meta property="og:title" content="Kitatool Save — paste a link, save the video">
+  <meta property="og:description" content="TikTok (no watermark), Instagram Reels and photos, X, Facebook and Pinterest. Free, no sign-up.">
+  <meta property="og:url" content="https://kitatool.com/save.html">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://kitatool.com/save.html">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="save.css">
+</head>
+<body class="save-page">
+  <div class="save-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <main class="tab active narrow">
+    <header class="top">
+      <div>
+        <h1 class="brand">kita<span>tool</span></h1>
+        <p class="dim">Save videos & photos</p>
+      </div>
+      <span id="srvChip" class="chip" style="--c:var(--dim)">Connecting…</span>
+    </header>
+
+    <section class="card paste-card">
+      <div class="section">Paste a link</div>
+      <form id="form" class="paste-row" autocomplete="off">
+        <input id="url" type="url" inputmode="url" placeholder="https://www.tiktok.com/@…/video/…" aria-label="Post link" spellcheck="false">
+        <button type="button" id="pasteBtn" class="paste-btn" aria-label="Paste from clipboard">Paste</button>
+      </form>
+      <button id="goBtn" class="save-go" type="submit" form="form"><span>Get video</span></button>
+      <div class="platforms" id="platforms">
+        <span data-p="tiktok">TikTok</span>
+        <span data-p="instagram">Instagram</span>
+        <span data-p="x">X</span>
+        <span data-p="facebook">Facebook</span>
+        <span data-p="pinterest">Pinterest</span>
+      </div>
+    </section>
+
+    <section id="status" class="card status hidden">
+      <div class="spinner"></div>
+      <div>
+        <div id="statusTitle" class="card-title">Reading the post…</div>
+        <p id="statusText" class="dim small"></p>
+      </div>
+    </section>
+
+    <section id="errorCard" class="card glow-red hidden">
+      <div class="card-title red">Couldn't save that</div>
+      <p id="errorText" class="dim small"></p>
+    </section>
+
+    <section id="result" class="card result hidden">
+      <div class="res-head">
+        <div class="res-thumb"><img id="resThumb" alt=""></div>
+        <div class="res-meta">
+          <span id="resPlatform" class="chip"></span>
+          <div id="resAuthor" class="res-author"></div>
+          <p id="resTitle" class="dim small res-title"></p>
+        </div>
+      </div>
+      <div id="items" class="items"></div>
+      <p class="note">Save your own posts, or ones you have permission to use. Re-uploading other people's videos can get your account flagged for copyright.</p>
+    </section>
+
+    <section class="card how">
+      <div class="section">How it works</div>
+      <ol>
+        <li>Open the post in TikTok or Instagram and tap <b>Share → Copy link</b>.</li>
+        <li>Come back here and tap <b>Paste</b>, then <b>Get video</b>.</li>
+        <li>Pick what to save. TikTok videos come <b>without the watermark</b>.</li>
+      </ol>
+      <p class="note">On Android, install Kitatool from your browser menu ("Add to Home screen"). Then you can share a post straight to Kitatool.</p>
+    </section>
+    <p class="foot dim">Free · no sign-up · nothing is stored · powered by yt-dlp</p>
+  </main>
+
+  <nav class="tabbar">
+    <a href="./"><svg viewBox="0 0 24 24"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4.5-4.5"/></svg>Speed</a>
+    <a href="save.html" class="sel"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Save</a>
+  </nav>
+
+  <script>
+    // Address of the download server (Render). Change this one line if your service has a different name.
+    window.KITA_SAVE_API = 'https://kitatool-save.onrender.com';
+  </script>
+  <script src="save.js"></script>
+</body>
+</html>

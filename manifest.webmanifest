@@ -1,12 +1,36 @@
 {
-  "name": "Kitatool — Gaming Speed Test",
+  "name": "Kitatool — Speed Test & Video Saver",
   "short_name": "Kitatool",
-  "description": "Ping, jitter, lag under load and game-region pings for gamers.",
+  "description": "Gaming speed test, plus save TikTok and Instagram videos by pasting a link.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#06070B",
   "theme_color": "#06070B",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/save.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "shortcuts": [
+    {
+      "name": "Save a video",
+      "url": "/save.html"
+    },
+    {
+      "name": "Speed test",
+      "url": "/"
+    }
   ]
 }
