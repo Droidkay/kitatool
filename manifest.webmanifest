@@ -1,5 +1,5 @@
 {
-  "name": "Kitatool — Speed Test & Video Saver",
+  "name": "Kitatool — Speed Test, Video Saver & Light Tracker",
   "short_name": "Kitatool",
   "description": "Gaming speed test, plus save TikTok and Instagram videos by pasting a link.",
   "start_url": "/",
@@ -24,6 +24,10 @@
     }
   },
   "shortcuts": [
+    {
+      "name": "Light dey?",
+      "url": "/nepa.html"
+    },
     {
       "name": "Save a video",
       "url": "/save.html"

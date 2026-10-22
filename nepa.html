@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Light Dey? — Live NEPA tracker for your area</title>
+  <meta name="description" content="Is there light in your area right now? See live NEPA status by area across Nigeria, hours of light today, and report when light comes or goes.">
+  <meta name="theme-color" content="#06070B">
+  <meta property="og:title" content="Light Dey? — live NEPA tracker">
+  <meta property="og:description" content="See if there's light in your area right now, and how many hours you got today. Tap when light comes or goes.">
+  <meta property="og:url" content="https://kitatool.com/nepa.html">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://kitatool.com/nepa.html">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nepa.css">
+</head>
+<body class="nepa-page">
+  <div class="nepa-bg" aria-hidden="true"></div>
+
+  <main class="tab active narrow">
+    <header class="top">
+      <div>
+        <h1 class="brand">light <span>dey?</span></h1>
+        <p class="dim">Live NEPA tracker · by kitatool</p>
+      </div>
+      <span id="liveChip" class="chip" style="--c:var(--dim)">Loading…</span>
+    </header>
+
+    <!-- national pulse -->
+    <section class="pulse" id="pulse">
+      <div><b id="pOn">–</b><small>with light</small></div>
+      <div><b id="pOff">–</b><small>no light</small></div>
+      <div><b id="pRep">–</b><small>reports in 24h</small></div>
+    </section>
+
+    <!-- my area -->
+    <section id="mine" class="card mine hidden">
+      <div class="mine-top">
+        <div class="mine-where">
+          <div class="section" id="mineWhere">My area</div>
+          <div class="mine-hood" id="mineHood"></div>
+        </div>
+        <button class="ghost" id="changeBtn">Change</button>
+      </div>
+
+      <div class="bulb-row">
+        <div class="bulb" id="bulb" aria-hidden="true">
+          <svg viewBox="0 0 64 64"><path class="glass" d="M32 6a19 19 0 0 0-11 34.5c2 1.5 3 3.6 3 6V49h16v-2.5c0-2.4 1-4.5 3-6A19 19 0 0 0 32 6z"/><path class="fil" d="M26 33l3-5 3 5 3-5 3 5"/><path class="base" d="M24 53h16M26 58h12"/></svg>
+          <i class="rays"></i>
+        </div>
+        <div>
+          <div class="verdict" id="verdict">…</div>
+          <div class="since dim" id="since"></div>
+        </div>
+      </div>
+
+      <div class="today">
+        <div class="today-head"><span>Light today</span><b id="todayHrs">–</b></div>
+        <div class="today-bar"><i id="todayFill"></i></div>
+      </div>
+
+      <div class="week" id="week"></div>
+
+      <div class="report">
+        <button class="rep on" id="repOn"><span>💡</span>Light don come</button>
+        <button class="rep off" id="repOff"><span>🌑</span>Light don go</button>
+      </div>
+      <button class="share" id="shareBtn">Share my area's light on X</button>
+    </section>
+
+    <!-- set area -->
+    <section id="setup" class="card hidden">
+      <div class="section">Where are you?</div>
+      <label class="fld"><span>State</span><select id="selState"></select></label>
+      <label class="fld"><span>LGA</span><select id="selLga"></select></label>
+      <label class="fld"><span>Area or street</span>
+        <input id="inHood" list="hoodList" maxlength="40" placeholder="e.g. Bodija, Akobo, Lekki Phase 1" autocomplete="off">
+      </label>
+      <datalist id="hoodList"></datalist>
+      <p class="note">Use the name your neighbours use. Pick one from the suggestions if it's already there, so everyone's reports land together.</p>
+      <button class="save-go" id="saveArea"><span>Save my area</span></button>
+    </section>
+
+    <section id="errCard" class="card glow-red hidden">
+      <div class="card-title red" id="errTitle">Something went wrong</div>
+      <p class="dim small" id="errText"></p>
+    </section>
+
+    <!-- board -->
+    <section class="card board">
+      <div class="board-head">
+        <div class="section">Right now</div>
+        <div class="seg" id="scope">
+          <button data-s="state" class="sel">My state</button>
+          <button data-s="all">Nigeria</button>
+        </div>
+      </div>
+      <div id="boardList" class="board-list"></div>
+      <p class="note">Reports come from people in each area and from home inverters running the Lumen Power app. They aren't from the DisCos, so give it a minute to catch up.</p>
+    </section>
+
+    <p class="foot dim">No sign-up · your phone gets a random id, nothing personal is saved</p>
+  </main>
+
+  <nav class="tabbar">
+    <a href="./"><svg viewBox="0 0 24 24"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4.5-4.5"/></svg><span>Speed</span></a>
+    <a href="save.html"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg><span>Save</span></a>
+    <a href="nepa.html" class="sel"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span>Light</span></a>
+  </nav>
+
+  <script src="nepa.js"></script>
+</body>
+</html>
