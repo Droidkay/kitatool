@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kitatool — Gaming Speed Test</title>
+  <meta name="description" content="Free gaming speed test: ping, jitter, packet loss, lag under load, download and upload speed, plus ping to game server regions. Find out if your internet is ready for ranked.">
+  <meta name="theme-color" content="#06070B">
+  <meta property="og:title" content="Kitatool — Gaming Speed Test">
+  <meta property="og:description" content="Is your connection ready for ranked? Ping, jitter, lag under load and game-region pings in 30 seconds.">
+  <meta property="og:url" content="https://kitatool.com/">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://kitatool.com/">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://speed.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="aurora" aria-hidden="true"></canvas>
+
+  <!-- ============================== TEST ============================== -->
+  <main id="tab-test" class="tab active">
+    <header class="top">
+      <div>
+        <h1 class="brand">kita<span>tool</span></h1>
+        <p id="subline" class="dim">Gaming speed test</p>
+      </div>
+      <span id="netChip" class="chip">Detecting…</span>
+    </header>
+
+    <div class="test-layout">
+      <section class="gauge-col">
+        <div class="gauge-wrap">
+          <canvas id="gauge"></canvas>
+          <button id="goBtn" class="go" aria-label="Start speed test"><span>GO</span></button>
+          <div id="readout" class="readout hidden">
+            <div id="readValue" class="read-value">0</div>
+            <div id="readUnit" class="dim">Mbps</div>
+            <div id="readPhase" class="read-phase">PING</div>
+          </div>
+        </div>
+        <div class="steps" id="steps">
+          <span data-p="ping" style="--c:var(--lime)"><i></i>Ping</span>
+          <span data-p="download" style="--c:var(--cyan)"><i></i>Download</span>
+          <span data-p="upload" style="--c:var(--pink)"><i></i>Upload</span>
+          <span data-p="regions" style="--c:var(--amber)"><i></i>Game regions</span>
+        </div>
+        <button id="cancelBtn" class="ghost hidden">Cancel test</button>
+      </section>
+
+      <section class="info-col">
+        <div id="errorCard" class="card glow-red hidden">
+          <div class="card-title red">Test stopped</div>
+          <p id="errorText" class="dim"></p>
+        </div>
+
+        <div id="graphCard" class="card hidden">
+          <div id="graphTitle" class="section">Download · live</div>
+          <canvas id="graph" class="graph"></canvas>
+        </div>
+
+        <div class="tiles">
+          <div class="tile" style="--c:var(--lime)"><div class="tl"><i></i>Ping</div><div class="tv"><b id="vPing">–</b><small>ms</small></div></div>
+          <div class="tile" style="--c:var(--cyan)"><div class="tl"><i></i>Jitter</div><div class="tv"><b id="vJitter">–</b><small>ms</small></div></div>
+          <div class="tile" style="--c:var(--amber)"><div class="tl"><i></i>Loss <em>est.</em></div><div class="tv"><b id="vLoss">–</b><small>%</small></div></div>
+        </div>
+        <div class="tiles two">
+          <div class="tile big" style="--c:var(--cyan)"><div class="tl"><i></i>Download</div><div class="tv"><b id="vDown">–</b><small>Mbps</small></div></div>
+          <div class="tile big" style="--c:var(--pink)"><div class="tl"><i></i>Upload</div><div class="tv"><b id="vUp">–</b><small>Mbps</small></div></div>
+        </div>
+
+        <div id="results" class="hidden">
+          <div class="card" id="scoreCard">
+            <div class="section">Gaming score</div>
+            <div class="score-row">
+              <div class="score-ring">
+                <canvas id="scoreRing" width="216" height="216"></canvas>
+                <div class="score-mid"><b id="grade">A</b><small id="scoreNum">0/100</small></div>
+              </div>
+              <div class="score-text">
+                <p id="verdict" class="verdict"></p>
+                <div class="kv"><span>Lag when busy</span><b id="kBloat">–</b></div>
+                <div class="kv"><span>Ping while downloading</span><b id="kLd">–</b></div>
+                <div class="kv"><span>Ping while uploading</span><b id="kLu">–</b></div>
+              </div>
+            </div>
+            <p class="note">“Lag when busy” is how much your ping rises when someone on your network is streaming or downloading. Under 30 ms is great for gaming.</p>
+          </div>
+
+          <div class="card">
+            <div class="section">Ready for</div>
+            <div id="readiness"></div>
+          </div>
+
+          <div class="card">
+            <div class="section">Ping to game server regions</div>
+            <div id="regions"></div>
+            <p class="note">Measured to cloud data centres that host many online games. Pick the lowest region in your game's settings when you can.</p>
+          </div>
+
+          <div class="card">
+            <div class="section">Connection</div>
+            <div id="conn"></div>
+          </div>
+
+          <div class="actions">
+            <button id="againBtn" class="cta">TEST AGAIN</button>
+            <button id="shareBtn" class="ghost">Share result</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ============================== LIVE ============================== -->
+  <main id="tab-live" class="tab">
+    <header class="top">
+      <div>
+        <h1 class="brand">Live <span>Ping</span></h1>
+        <p class="dim">Watch lag spikes and packet loss in real time</p>
+      </div>
+    </header>
+    <div class="narrow">
+      <div id="targets" class="targets"></div>
+      <div class="live-big">
+        <div id="liveNow" class="live-now">—</div>
+        <div id="liveSub" class="dim">Tap start to monitor</div>
+      </div>
+      <div class="card" id="liveCard"><canvas id="bars" class="bars"></canvas></div>
+      <div class="tiles">
+        <div class="tile sm"><div class="tl">Average</div><div class="tv"><b id="lAvg">–</b><small>ms</small></div></div>
+        <div class="tile sm"><div class="tl">Best</div><div class="tv"><b id="lMin">–</b><small>ms</small></div></div>
+        <div class="tile sm"><div class="tl">Worst</div><div class="tv"><b id="lMax">–</b><small>ms</small></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile sm"><div class="tl">Jitter</div><div class="tv"><b id="lJit">–</b><small>ms</small></div></div>
+        <div class="tile sm"><div class="tl">Loss</div><div class="tv"><b id="lLoss">–</b><small>%</small></div></div>
+        <div class="tile sm"><div class="tl">Spikes</div><div class="tv"><b id="lSpk">0</b></div></div>
+      </div>
+      <div class="actions"><button id="liveBtn" class="cta live">START</button></div>
+    </div>
+  </main>
+
+  <!-- ============================== HISTORY ============================== -->
+  <main id="tab-history" class="tab">
+    <header class="top">
+      <div>
+        <h1 class="brand">His<span>tory</span></h1>
+        <p id="histCount" class="dim">0 tests</p>
+      </div>
+      <button id="clearBtn" class="ghost red hidden">Clear</button>
+    </header>
+    <div class="narrow" id="histList"></div>
+  </main>
+
+  <nav class="tabbar">
+    <button data-tab="test" class="sel"><svg viewBox="0 0 24 24"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13l4.5-4.5"/></svg>Test</button>
+    <button data-tab="live"><svg viewBox="0 0 24 24"><path d="M2 12h5l2-6 4 12 2.5-6H22"/></svg>Live</button>
+    <button data-tab="history"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>History</button>
+  </nav>
+
+  <footer class="foot dim">Tests run on Cloudflare's global network. Results stay on your device.</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
