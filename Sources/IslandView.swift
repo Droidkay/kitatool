@@ -311,19 +311,30 @@ struct Equalizer: View {
     let color: Color
     let playing: Bool
 
+    static func level(_ i: Int, _ t: Double, _ playing: Bool) -> CGFloat {
+        if !playing { return 0.25 }
+        let speed: Double = 3.1 + Double(i) * 1.3
+        let phase: Double = Double(i) * 1.7
+        let wave: Double = abs(sin(t * speed + phase))
+        return CGFloat(0.3 + 0.7 * wave)
+    }
+
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: !playing)) { ctx in
-            let t = ctx.date.timeIntervalSinceReferenceDate
-            GeometryReader { g in
-                HStack(alignment: .bottom, spacing: g.size.width * 0.12) {
-                    ForEach(0..<4, id: \.self) { i in
-                        let v = playing ? 0.3 + 0.7 * abs(sin(t * (3.1 + Double(i) * 1.3) + Double(i) * 1.7)) : 0.25
-                        Capsule().fill(color)
-                            .frame(height: max(2, g.size.height * CGFloat(v)))
-                    }
+            bars(ctx.date.timeIntervalSinceReferenceDate)
+        }
+    }
+
+    private func bars(_ t: Double) -> some View {
+        GeometryReader { g in
+            HStack(alignment: .bottom, spacing: g.size.width * 0.12) {
+                ForEach(0..<4, id: \.self) { i in
+                    Capsule()
+                        .fill(color)
+                        .frame(height: max(2, g.size.height * Equalizer.level(i, t, playing)))
                 }
-                .frame(width: g.size.width, height: g.size.height, alignment: .bottom)
             }
+            .frame(width: g.size.width, height: g.size.height, alignment: .bottom)
         }
     }
 }
