@@ -235,11 +235,11 @@ enum Renderer {
         ctx.drawLinearGradient(base, start: CGPoint(x: r.minX, y: r.minY), end: CGPoint(x: r.maxX, y: r.maxY), options: [])
         let sun = bg.glow ?? RGBA(hex: 0xFF8A1A)
         let k = max(0.05, bg.glowStrength)
-        let c = CGPoint(x: sunX, y: r.height * 0.52)
+        let c = CGPoint(x: min(r.maxX - 60, sunX + r.width * 0.05), y: r.height * 0.56)
         // wide warm haze
         let haze = CGGradient(colorsSpace: space, colors: [sun.with(alpha: 0.95 * k).cg, sun.with(alpha: 0.45 * k).cg, sun.with(alpha: 0).cg] as CFArray,
                               locations: [0, 0.35, 1])!
-        ctx.drawRadialGradient(haze, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.width * 0.55, options: [])
+        ctx.drawRadialGradient(haze, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.width * 0.5, options: [])
         // rays
         ctx.saveGState()
         ctx.setBlendMode(.screen)
@@ -247,7 +247,7 @@ enum Renderer {
         for i in 0..<22 {
             let a = Double(i) / 22 * .pi * 2 + rng.next() * 0.12
             let spread = 0.025 + rng.next() * 0.04
-            let len = r.width * (0.45 + rng.next() * 0.35)
+            let len = r.width * (0.28 + rng.next() * 0.22)
             let p = CGMutablePath()
             p.move(to: c)
             p.addLine(to: CGPoint(x: c.x + CGFloat(cos(a - spread)) * len, y: c.y + CGFloat(sin(a - spread)) * len))
@@ -256,14 +256,14 @@ enum Renderer {
             ctx.saveGState()
             ctx.addPath(p)
             ctx.clip()
-            let ray = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFE2A0).with(alpha: 0.38 * k).cg, RGBA(hex: 0xFFB04A).with(alpha: 0).cg] as CFArray, locations: [0, 1])!
+            let ray = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFE2A0).with(alpha: 0.2 * k).cg, RGBA(hex: 0xFFB04A).with(alpha: 0).cg] as CFArray, locations: [0, 1])!
             ctx.drawRadialGradient(ray, startCenter: c, startRadius: 0, endCenter: c, endRadius: len, options: [])
             ctx.restoreGState()
         }
         // hot core
-        let core = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFF1C2).with(alpha: 0.9 * k).cg, RGBA(hex: 0xFFB13B).with(alpha: 0.55 * k).cg, sun.with(alpha: 0).cg] as CFArray,
+        let core = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFE7A8).with(alpha: 0.95 * k).cg, RGBA(hex: 0xFF9A1F).with(alpha: 0.7 * k).cg, sun.with(alpha: 0).cg] as CFArray,
                               locations: [0, 0.3, 1])!
-        ctx.drawRadialGradient(core, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.height * 0.42, options: [])
+        ctx.drawRadialGradient(core, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.height * 0.5, options: [])
         // sparks
         for _ in 0..<70 {
             let ang = rng.next() * .pi * 2
@@ -359,7 +359,7 @@ enum Renderer {
             NSGraphicsContext.current?.cgContext.setFillColor(b.boxColor.cg)
             NSGraphicsContext.current?.cgContext.fill(b.rect)
         }
-        var y = CGFloat(b.y) + max(0, (CGFloat(b.h) - total) / 2)
+        var y = CGFloat(b.y) + (b.alignTop ? 0 : max(0, (CGFloat(b.h) - total) / 2))
         for (i, line) in ls.enumerated() {
             let size = ss[i]
             let fill = attributed(line, b: b, size: size, outline: false)

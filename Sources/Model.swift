@@ -191,6 +191,8 @@ struct TextBlock: Codable, Equatable, Identifiable {
     var uppercase: Bool = true
     /// Every line the same size (otherwise short lines can grow bigger).
     var sameSize: Bool = false
+    /// Start at the top of the box instead of centring the lines in it.
+    var alignTop: Bool = false
     /// Text comes from the date picker instead of typing.
     var dateFormat: DateFormat? = nil
 
@@ -200,12 +202,12 @@ struct TextBlock: Codable, Equatable, Identifiable {
          color: RGBA = .white, accent: RGBA = .gold, accent2: RGBA = .orangeRed, strokeColor: RGBA = .black, stroke: Double = 7,
          shadow: Bool = true, hardShadow: Bool = false, align: TextAlign = .left, style: LineStyle = .plain, boxColor: RGBA = .red,
          boxRadius: Double = 6, boxPad: Double = 0.16, lineSpacing: Double = 1.02, uppercase: Bool = true, sameSize: Bool = false,
-         dateFormat: DateFormat? = nil) {
+         alignTop: Bool = false, dateFormat: DateFormat? = nil) {
         self.name = name; self.text = text; self.x = x; self.y = y; self.w = w; self.h = h; self.font = font; self.maxSize = maxSize
         self.color = color; self.accent = accent; self.accent2 = accent2; self.strokeColor = strokeColor; self.stroke = stroke
         self.shadow = shadow; self.hardShadow = hardShadow; self.align = align; self.style = style; self.boxColor = boxColor
         self.boxRadius = boxRadius; self.boxPad = boxPad; self.lineSpacing = lineSpacing; self.uppercase = uppercase
-        self.sameSize = sameSize; self.dateFormat = dateFormat
+        self.sameSize = sameSize; self.alignTop = alignTop; self.dateFormat = dateFormat
     }
 
     // Older saved designs may miss newer fields; fill in defaults instead of failing.
@@ -236,6 +238,7 @@ struct TextBlock: Codable, Equatable, Identifiable {
         lineSpacing = (try? c.decode(Double.self, forKey: .lineSpacing)) ?? z.lineSpacing
         uppercase = (try? c.decode(Bool.self, forKey: .uppercase)) ?? z.uppercase
         sameSize = (try? c.decode(Bool.self, forKey: .sameSize)) ?? z.sameSize
+        alignTop = (try? c.decode(Bool.self, forKey: .alignTop)) ?? z.alignTop
         dateFormat = try? c.decode(DateFormat.self, forKey: .dateFormat)
     }
 }

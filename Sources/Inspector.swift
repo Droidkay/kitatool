@@ -151,6 +151,7 @@ struct BlockEditor: View {
                     ColorPicker("{ }", selection: colorBinding(b.accent2), supportsOpacity: false)
                 }
                 Toggle("Every line the same size", isOn: b.sameSize)
+                Toggle("Start at the top of the box", isOn: b.alignTop)
                 LabeledSlider(title: "Outline", value: b.stroke, range: 0...16, format: "%.0f")
                 if b.wrappedValue.stroke > 0 {
                     ColorPicker("Outline colour", selection: colorBinding(b.strokeColor), supportsOpacity: false)

@@ -54,9 +54,9 @@ enum Template: String, CaseIterable, Identifiable {
                 TextBlock(name: "Date", text: "", x: 50, y: 40, w: 650, h: 74, font: "Poppins-Bold", maxSize: 38,
                           color: RGBA(hex: 0x1C1406), stroke: 0, shadow: false, align: .left, style: .boxed,
                           boxColor: .sunGold, boxRadius: 14, boxPad: 0.48, dateFormat: .dayCommaDateYear),
-                TextBlock(name: "Title", text: "SPEAK INTO YOUR\n[@DAY MORNING]\nBEFORE THE\n{ENEMY DOES}", x: 54, y: 168, w: 840, h: 418,
+                TextBlock(name: "Title", text: "SPEAK INTO YOUR\n[@DAY MORNING]\nBEFORE THE\n{ENEMY DOES}", x: 54, y: 166, w: 850, h: 440,
                           font: "Poppins-ExtraBold", maxSize: 110, color: .white, accent: .sunGold, accent2: .orangeRed,
-                          stroke: 0, shadow: true, hardShadow: true, align: .left, lineSpacing: 1.1, sameSize: true),
+                          stroke: 0, shadow: true, hardShadow: true, align: .left, lineSpacing: 1.1, sameSize: true, alignTop: true),
                 TextBlock(name: "Footer", text: "EARLY MORNING PRAYER", x: 57, y: 636, w: 320, h: 64, font: "Poppins-SemiBold", maxSize: 26,
                           color: RGBA(1, 1, 1, 0.92), accent: .sunGold, stroke: 0, shadow: false, align: .left, style: .rule),
             ]
