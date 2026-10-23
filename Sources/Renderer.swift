@@ -1,6 +1,7 @@
 import AppKit
 import CoreImage
 import Vision
+import CoreText
 
 /// Loads pictures once, and keeps the cut-out version of each person photo.
 final class ImageStore {
@@ -330,19 +331,32 @@ enum Renderer {
                 ctx.addPath(CGPath(roundedRect: box, cornerWidth: 6, cornerHeight: 6, transform: nil))
                 ctx.fillPath()
             }
+            // Draw with Core Text so the outline uses rounded corners (no spiky letter tips).
+            let ctx = NSGraphicsContext.current!.cgContext
+            let ctLine = CTLineCreateWithAttributedString(fill)
+            ctx.saveGState()
+            ctx.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
+            ctx.textPosition = CGPoint(x: origin.x, y: baselineY)
             if b.stroke > 0 {
-                attributed(line, b: b, size: size, outline: true).draw(at: origin)
+                ctx.saveGState()
+                ctx.setTextDrawingMode(.stroke)
+                ctx.setLineJoin(.round)
+                ctx.setLineCap(.round)
+                ctx.setLineWidth(size * CGFloat(b.stroke) / 100 * 2)
+                ctx.setStrokeColor(b.strokeColor.cg)
+                if b.shadow {
+                    ctx.setShadow(offset: CGSize(width: 0, height: size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.7).cgColor)
+                }
+                CTLineDraw(ctLine, ctx)
+                ctx.restoreGState()
+                ctx.textPosition = CGPoint(x: origin.x, y: baselineY)
             }
-            NSGraphicsContext.saveGraphicsState()
-            if b.shadow {
-                let sh = NSShadow()
-                sh.shadowColor = NSColor.black.withAlphaComponent(0.75)
-                sh.shadowBlurRadius = size * 0.12
-                sh.shadowOffset = NSSize(width: 0, height: -size * 0.04)
-                sh.set()
+            ctx.setTextDrawingMode(.fill)
+            if b.shadow && b.stroke <= 0 {
+                ctx.setShadow(offset: CGSize(width: 0, height: size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.75).cgColor)
             }
-            fill.draw(at: origin)
-            NSGraphicsContext.restoreGraphicsState()
+            CTLineDraw(ctLine, ctx)
+            ctx.restoreGState()
             rects.append(b.style == .band ? b.rect : box)
             y += lineH
         }

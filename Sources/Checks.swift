@@ -24,8 +24,9 @@ enum Checks {
             if ls.isEmpty { continue }
             let ss = Renderer.sizes(for: ls, b: b)
             // capital letters on a phone, in pixels
-            if let mn = ss.min(), mn * 0.72 * scale < 7.5, b.style != .band { tooSmall.append(b.name) }
-            if b.style == .band && (ss.min() ?? 0) * 0.72 * scale < 6 { tooSmall.append(b.name) }
+            // capital-letter height on a phone: the title needs more than small labels
+            let need: CGFloat = b.name == "Title" ? 7.5 : 5.5
+            if let mn = ss.min(), mn * 0.72 * scale < need { tooSmall.append(b.name) }
             if let f = face, let rs = layout.textRects[b.id], b.style != .band, rs.contains(where: { $0.intersects(f) }) { covered = true }
             if b.style == .plain && b.stroke < 2, let p = plate, let rs = layout.textRects[b.id] {
                 let bg = averageLuminance(p, in: rs.reduce(CGRect.null) { $0.union($1) })
