@@ -1,0 +1,13 @@
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+Building for €¦
+build/Thumbnail Lab.app: replacing existing signature
+BUILD OK
+Early Morning Prayer: [warn] Text is covering the face. Tap "Keep text off face". | [good] Text is readable at phone size. | [tip] Title has 9 words. 3â€“6 big words usually get more clicks.
+Psalm Prayer: [good] Face is clear of text. | [good] Text is readable at phone size.
+Dated Prayer: [good] Face is clear of text. | [good] Text is readable at phone size.
+Morning (plain): [good] Face is clear of text. | [good] Text is readable at phone size.
+Doctor / Health: [good] Face is clear of text. | [good] Text is readable at phone size.
+Blank: [good] Face is clear of text. | [good] Text is readable at phone size.
+samples written to /Users/runner/work/kitatool/kitatool/out/samples
