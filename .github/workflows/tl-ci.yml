@@ -1,0 +1,30 @@
+name: tl-ci
+on:
+  push:
+    branches: [tl-ci]
+permissions:
+  contents: write
+jobs:
+  mac:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          sw_vers > build.log
+          if bash build.sh --no-install >> build.log 2>&1; then echo "BUILD OK" >> build.log; else echo "BUILD FAILED" >> build.log; fi
+      - name: Render samples
+        run: |
+          mkdir -p out/samples
+          if [ -x "build/Thumbnail Lab.app/Contents/MacOS/ThumbnailLab" ]; then
+            "build/Thumbnail Lab.app/Contents/MacOS/ThumbnailLab" --samples out/samples testdata/person.png >> build.log 2>&1 || echo "SAMPLES FAILED $?" >> build.log
+            (cd build && ditto -c -k --keepParent "Thumbnail Lab.app" ../out/ThumbnailLab-mac.zip)
+          fi
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p out && cp build.log out/ 2>/dev/null || true
+          cd out && git init -q && git checkout -q -b r
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git add -A && git commit -qm "result ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" r:tl-ci-result
