@@ -347,7 +347,12 @@ enum Renderer {
                 if b.shadow {
                     ctx.setShadow(offset: CGSize(width: 0, height: -size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.7).cgColor)
                 }
-                CTLineDraw(ctLine, ctx)
+                // Core Text strokes with each run's text colour, so make a copy coloured like the outline
+                let outline = NSMutableAttributedString(attributedString: fill)
+                let all = NSRange(location: 0, length: outline.length)
+                outline.addAttribute(.foregroundColor, value: b.strokeColor.ns, range: all)
+                outline.addAttribute(.strokeColor, value: b.strokeColor.ns, range: all)
+                CTLineDraw(CTLineCreateWithAttributedString(outline), ctx)
                 ctx.restoreGState()
                 ctx.textPosition = CGPoint(x: origin.x, y: baselineY)
             }
