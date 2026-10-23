@@ -24,9 +24,16 @@ enum GlassStyle: String, CaseIterable {
         }
     }
 
+    /// Apple's Liquid Glass needs macOS 26 and an app built with Xcode 26's tools.
+    static var liquidAvailable: Bool {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) { return true }
+        #endif
+        return false
+    }
+
     static var defaultStyle: GlassStyle {
-        if #available(macOS 26.0, *) { return .liquid }
-        return .frosted
+        liquidAvailable ? .liquid : .frosted
     }
 }
 

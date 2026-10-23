@@ -58,7 +58,7 @@ struct IslandSurface<S: Shape>: View {
     }
 
     @ViewBuilder var glass: some View {
-        if style == .liquid, LiquidGlass<S>.available {
+        if style == .liquid, GlassStyle.liquidAvailable {
             LiquidGlass(shape: shape)
         } else if style != .black {
             ZStack {
@@ -78,13 +78,6 @@ struct IslandSurface<S: Shape>: View {
 /// Apple's own Liquid Glass. Only built when the Mac's tools are new enough (Xcode 26).
 struct LiquidGlass<S: Shape>: View {
     let shape: S
-
-    static var available: Bool {
-        #if compiler(>=6.2)
-        if #available(macOS 26.0, *) { return true }
-        #endif
-        return false
-    }
 
     var body: some View {
         #if compiler(>=6.2)

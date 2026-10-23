@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let lookMenu = NSMenu()
         for (i, g) in GlassStyle.allCases.enumerated() {
             var title = g.title
-            if g == .liquid && !LiquidGlass<RoundedRectangle>.available { title += " (needs macOS 26)" }
+            if g == .liquid && !GlassStyle.liquidAvailable { title += " (needs macOS 26)" }
             let it = NSMenuItem(title: title, action: #selector(pickGlass(_:)), keyEquivalent: "")
             it.tag = i
             it.target = self
