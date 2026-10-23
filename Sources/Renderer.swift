@@ -345,7 +345,7 @@ enum Renderer {
                 ctx.setLineWidth(size * CGFloat(b.stroke) / 100 * 2)
                 ctx.setStrokeColor(b.strokeColor.cg)
                 if b.shadow {
-                    ctx.setShadow(offset: CGSize(width: 0, height: size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.7).cgColor)
+                    ctx.setShadow(offset: CGSize(width: 0, height: -size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.7).cgColor)
                 }
                 CTLineDraw(ctLine, ctx)
                 ctx.restoreGState()
@@ -353,7 +353,7 @@ enum Renderer {
             }
             ctx.setTextDrawingMode(.fill)
             if b.shadow && b.stroke <= 0 {
-                ctx.setShadow(offset: CGSize(width: 0, height: size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.75).cgColor)
+                ctx.setShadow(offset: CGSize(width: 0, height: -size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.75).cgColor)
             }
             CTLineDraw(ctLine, ctx)
             ctx.restoreGState()
