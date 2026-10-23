@@ -6,7 +6,11 @@ permissions:
   contents: write
 jobs:
   mac:
-    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, macos-14]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Build
@@ -15,9 +19,11 @@ jobs:
           if bash build.sh --no-install >> build.log 2>&1; then echo "BUILD OK" >> build.log; else echo "BUILD FAILED" >> build.log; fi
           if [ -d "build/Notch Player.app" ]; then (cd build && ditto -c -k --keepParent "Notch Player.app" ../NotchPlayer-mac.zip); fi
       - name: Publish result
+        if: always()
         run: |
-          mkdir -p /tmp/out && cp build.log /tmp/out/ && (cp NotchPlayer-mac.zip /tmp/out/ 2>/dev/null || true)
-          cd /tmp/out && git init -q && git checkout -q -b notch-ci-result
+          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log (runner problem)" > /tmp/out/build.log
+          cp NotchPlayer-mac.zip /tmp/out/ 2>/dev/null || true
+          cd /tmp/out && git init -q && git checkout -q -b r
           git config user.name ci && git config user.email ci@users.noreply.github.com
           git add -A && git commit -qm "result ${GITHUB_SHA}"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" notch-ci-result
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" r:notch-ci-result-${{ matrix.os }}

@@ -5,6 +5,8 @@ import IOKit.ps
 final class Battery: ObservableObject {
     @Published private(set) var percent = 100
     @Published private(set) var plugged = false
+    /// False on desktop Macs (iMac, Mac mini, Mac Studio).
+    @Published private(set) var hasBattery = false
     var onChange: ((Int, Bool) -> Void)?
     private var source: CFRunLoopSource?
     private var started = false
@@ -34,6 +36,7 @@ final class Battery: ObservableObject {
             let pct = max > 0 ? Int((Double(cur) / Double(max) * 100).rounded()) : cur
             let isPlugged = (d[kIOPSPowerSourceStateKey] as? String) == kIOPSACPowerValue
             let changed = isPlugged != plugged
+            hasBattery = true
             percent = pct
             plugged = isPlugged
             if notify && changed { onChange?(pct, isPlugged) }

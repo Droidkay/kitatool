@@ -1,30 +1,53 @@
 import AppKit
 import ServiceManagement
 
-// Notch Player: turns the MacBook notch into a little Dynamic Island.
-// Menu-bar-only app (no Dock icon). Hover the notch to open it.
+// Notch Player: turns the top of your screens into a little Dynamic Island.
+// On the MacBook screen it grows out of the camera notch; on other monitors it floats as a glass pill.
+// Menu-bar-only app (no Dock icon). Hover the island to open it.
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let state = IslandState()
-    var island: IslandController!
+    let hub = Hub()
+    var islands: [IslandController] = []
     var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ note: Notification) {
-        island = IslandController(state: state)
-        island.show()
+        hub.onExpandAll = { [weak self] on in self?.islands.forEach { $0.island.setExpanded(on) } }
+        buildIslands()
         setupMenu()
-        state.nowPlaying.start()
-        state.battery.start()
+        hub.nowPlaying.start()
+        hub.battery.start()
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged),
                                                name: NSApplication.didChangeScreenParametersNotification, object: nil)
-        if !UserDefaults.standard.bool(forKey: "welcomed") {
-            UserDefaults.standard.set(true, forKey: "welcomed")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.state.show(.welcome, seconds: 4) }
+        if !UserDefaults.standard.bool(forKey: "welcomed2") {
+            UserDefaults.standard.set(true, forKey: "welcomed2")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.hub.show(.welcome, seconds: 4) }
         }
     }
 
+    /// Screens that should have an island, based on the setting.
+    func wantedScreens() -> [NSScreen] {
+        let all = NSScreen.screens
+        switch hub.screens {
+        case .all:
+            return all
+        case .builtIn:
+            if let s = all.first(where: { $0.safeAreaInsets.top > 0 || CGDisplayIsBuiltin(IslandController.displayID($0)) != 0 }) { return [s] }
+            return [NSScreen.main ?? all[0]]
+        case .main:
+            // the screen with the menu bar
+            return [all.first ?? NSScreen.main!]
+        }
+    }
+
+    func buildIslands() {
+        islands.forEach { $0.close() }
+        islands = wantedScreens().map { IslandController(hub: hub, screen: $0) }
+        islands.forEach { $0.show() }
+    }
+
     @objc func screensChanged() {
-        island.reposition()
+        // screens plugged in, unplugged, rearranged or resized
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.buildIslands() }
     }
 
     func setupMenu() {
@@ -40,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let m = NSMenu()
         m.addItem(withTitle: "Notch Player", action: nil, keyEquivalent: "").isEnabled = false
         m.addItem(.separator())
+
         let timer = NSMenuItem(title: "Timer", action: nil, keyEquivalent: "")
         let sub = NSMenu()
         for mins in [5, 10, 15, 25, 45, 60] {
@@ -54,15 +78,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sub.addItem(stop)
         timer.submenu = sub
         m.addItem(timer)
+        m.addItem(.separator())
 
-        let hide = NSMenuItem(title: state.hidden ? "Show the island" : "Hide the island", action: #selector(toggleHidden), keyEquivalent: "h")
-        hide.target = self
-        m.addItem(hide)
+        let look = NSMenuItem(title: "Look", action: nil, keyEquivalent: "")
+        let lookMenu = NSMenu()
+        for (i, g) in GlassStyle.allCases.enumerated() {
+            var title = g.title
+            if g == .liquid && !LiquidGlass<RoundedRectangle>.available { title += " (needs macOS 26)" }
+            let it = NSMenuItem(title: title, action: #selector(pickGlass(_:)), keyEquivalent: "")
+            it.tag = i
+            it.target = self
+            it.state = hub.glass == g ? .on : .off
+            lookMenu.addItem(it)
+        }
+        look.submenu = lookMenu
+        m.addItem(look)
+
+        let where_ = NSMenuItem(title: "Show on", action: nil, keyEquivalent: "")
+        let whereMenu = NSMenu()
+        for (i, s) in ScreenChoice.allCases.enumerated() {
+            let it = NSMenuItem(title: s.title, action: #selector(pickScreens(_:)), keyEquivalent: "")
+            it.tag = i
+            it.target = self
+            it.state = hub.screens == s ? .on : .off
+            whereMenu.addItem(it)
+        }
+        where_.submenu = whereMenu
+        m.addItem(where_)
+
+        let clock = NSMenuItem(title: "Show clock and battery", action: #selector(toggleClock), keyEquivalent: "")
+        clock.target = self
+        clock.state = hub.showClock ? .on : .off
+        m.addItem(clock)
 
         let charge = NSMenuItem(title: "Show charging", action: #selector(toggleCharging), keyEquivalent: "")
         charge.target = self
-        charge.state = state.showCharging ? .on : .off
+        charge.state = hub.showCharging ? .on : .off
         m.addItem(charge)
+
+        let hide = NSMenuItem(title: hub.hidden ? "Show the island" : "Hide the island", action: #selector(toggleHidden), keyEquivalent: "h")
+        hide.target = self
+        m.addItem(hide)
 
         let login = NSMenuItem(title: "Open at login", action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
@@ -73,29 +129,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let about = NSMenuItem(title: "About Notch Player", action: #selector(aboutApp), keyEquivalent: "")
         about.target = self
         m.addItem(about)
-        let quit = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        m.addItem(quit)
+        m.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = m
     }
 
     @objc func startTimer(_ sender: NSMenuItem) {
-        state.timer.start(minutes: sender.tag)
-        state.show(.timerStarted, seconds: 2.5)
+        hub.timer.start(minutes: sender.tag)
+        hub.show(.timerStarted, seconds: 2.5)
     }
 
     @objc func stopTimer() {
-        state.timer.reset()
+        hub.timer.reset()
+    }
+
+    @objc func pickGlass(_ sender: NSMenuItem) {
+        hub.setGlass(GlassStyle.allCases[sender.tag])
+        rebuildMenu()
+    }
+
+    @objc func pickScreens(_ sender: NSMenuItem) {
+        hub.screens = ScreenChoice.allCases[sender.tag]
+        UserDefaults.standard.set(hub.screens.rawValue, forKey: "screens")
+        buildIslands()
+        rebuildMenu()
+    }
+
+    @objc func toggleClock() {
+        hub.showClock.toggle()
+        UserDefaults.standard.set(hub.showClock, forKey: "showClock")
+        rebuildMenu()
     }
 
     @objc func toggleHidden() {
-        state.hidden.toggle()
-        island.applyHidden()
+        hub.hidden.toggle()
+        islands.forEach { $0.applyHidden() }
         rebuildMenu()
     }
 
     @objc func toggleCharging() {
-        state.showCharging.toggle()
-        UserDefaults.standard.set(state.showCharging, forKey: "showCharging")
+        hub.showCharging.toggle()
+        UserDefaults.standard.set(hub.showCharging, forKey: "showCharging")
         rebuildMenu()
     }
 
@@ -118,8 +191,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func aboutApp() {
         NSApp.activate(ignoringOtherApps: true)
         let a = NSAlert()
-        a.messageText = "Notch Player 1.0"
-        a.informativeText = "Turns your MacBook notch into a mini music player and timer.\n\nHover the notch to open it. Works with Spotify and Apple Music.\n\nby DroidKay"
+        a.messageText = "Notch Player 1.1"
+        a.informativeText = "A Dynamic Island for your Mac: music and a timer at the top of every screen.\n\nHover the island to open it. Works with Spotify and Apple Music.\n\nby DroidKay"
         a.runModal()
     }
 }
