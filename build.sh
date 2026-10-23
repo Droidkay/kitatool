@@ -21,6 +21,7 @@ xcrun swiftc -O -target "$ARCH-apple-macos13.0" \
   -o "$APP/Contents/MacOS/ThumbnailLab" Sources/*.swift
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp -R Resources/Fonts "$APP/Contents/Resources/Fonts"
 codesign --force --deep --sign - "$APP"
 
 if [ "$1" != "--no-install" ]; then

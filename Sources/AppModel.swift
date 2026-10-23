@@ -28,7 +28,7 @@ final class AppModel: ObservableObject {
            let d = try? JSONDecoder().decode(Design.self, from: data) {
             design = d
         } else {
-            design = Template.psalm.make()
+            design = Template.earlyMorning.make()
         }
         ImageStore.shared.onReady = { [weak self] in self?.renderNow() }
         loadPresets()

@@ -5,6 +5,7 @@ import SwiftUI
 
 /// `ThumbnailLab --samples <folder> [person.png]` renders every template to PNG (used to check the design).
 func renderSamples(_ args: [String]) -> Never {
+    Fonts.registerBundled()
     let out = URL(fileURLWithPath: args.count > 2 ? args[2] : "samples")
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
     let person = args.count > 3 ? args[3] : nil
@@ -37,7 +38,10 @@ if CommandLine.arguments.count > 1 && CommandLine.arguments[1] == "--samples" {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
-    let model = AppModel()
+    let model: AppModel = {
+        Fonts.registerBundled()
+        return AppModel()
+    }()
 
     func applicationDidFinishLaunching(_ note: Notification) {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900),

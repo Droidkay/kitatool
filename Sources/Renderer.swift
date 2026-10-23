@@ -147,7 +147,7 @@ enum Renderer {
         NSGraphicsContext.current = ns
         let full = CGRect(x: 0, y: 0, width: W, height: H)
 
-        drawBackground(d.background, in: full, ctx: ctx, store: store)
+        drawBackground(d.background, in: full, ctx: ctx, store: store, sunX: CGFloat(d.subject.centerX) * Design.W)
 
         // the person
         let photo = d.subject.cutout ? (store.cutout(d.subject.imagePath) ?? store.image(d.subject.imagePath)) : store.image(d.subject.imagePath)
@@ -156,7 +156,7 @@ enum Renderer {
             let w = h * img.size.width / img.size.height
             let r = CGRect(x: CGFloat(d.subject.centerX) * Design.W - w / 2, y: CGFloat(d.subject.bottom) * Design.H - h, width: w, height: h)
             layout.subjectRect = r
-            if let g = d.background.glow, d.background.glowStrength > 0 {
+            if let g = d.background.glow, d.background.glowStrength > 0, d.background.kind != .sunrise {
                 drawGlow(g, strength: d.background.glowStrength, around: r, ctx: ctx)
             }
             ctx.saveGState()
@@ -172,7 +172,7 @@ enum Renderer {
                 if d.subject.flip { fx = 1 - f.maxX }
                 layout.faceRect = CGRect(x: r.minX + fx * r.width, y: r.minY + f.minY * r.height, width: f.width * r.width, height: f.height * r.height)
             }
-        } else if let g = d.background.glow, d.background.glowStrength > 0 {
+        } else if let g = d.background.glow, d.background.glowStrength > 0, d.background.kind != .sunrise {
             let r = CGRect(x: CGFloat(d.subject.centerX) * Design.W - 250, y: 120, width: 500, height: 600)
             drawGlow(g, strength: d.background.glowStrength, around: r, ctx: ctx)
         }
@@ -190,8 +190,10 @@ enum Renderer {
 
     // MARK: background
 
-    static func drawBackground(_ bg: Background, in r: CGRect, ctx: CGContext, store: ImageStore) {
+    static func drawBackground(_ bg: Background, in r: CGRect, ctx: CGContext, store: ImageStore, sunX: CGFloat = 900) {
         switch bg.kind {
+        case .sunrise:
+            drawSunrise(bg, in: r, ctx: ctx, sunX: sunX)
         case .solid:
             ctx.setFillColor(bg.color1.cg)
             ctx.fill(r)
@@ -226,6 +228,54 @@ enum Renderer {
         }
     }
 
+    /// Deep night colours on the left, a sun rising behind the person with soft rays and sparks.
+    static func drawSunrise(_ bg: Background, in r: CGRect, ctx: CGContext, sunX: CGFloat) {
+        let space = CGColorSpace(name: CGColorSpace.sRGB)
+        let base = CGGradient(colorsSpace: space, colors: [bg.color1.cg, bg.color2.cg] as CFArray, locations: [0, 1])!
+        ctx.drawLinearGradient(base, start: CGPoint(x: r.minX, y: r.minY), end: CGPoint(x: r.maxX, y: r.maxY), options: [])
+        let sun = bg.glow ?? RGBA(hex: 0xFF8A1A)
+        let k = max(0.05, bg.glowStrength)
+        let c = CGPoint(x: sunX, y: r.height * 0.52)
+        // wide warm haze
+        let haze = CGGradient(colorsSpace: space, colors: [sun.with(alpha: 0.95 * k).cg, sun.with(alpha: 0.45 * k).cg, sun.with(alpha: 0).cg] as CFArray,
+                              locations: [0, 0.35, 1])!
+        ctx.drawRadialGradient(haze, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.width * 0.55, options: [])
+        // rays
+        ctx.saveGState()
+        ctx.setBlendMode(.screen)
+        var rng = SeededRandom(seed: UInt64(bg.seed))
+        for i in 0..<22 {
+            let a = Double(i) / 22 * .pi * 2 + rng.next() * 0.12
+            let spread = 0.025 + rng.next() * 0.04
+            let len = r.width * (0.45 + rng.next() * 0.35)
+            let p = CGMutablePath()
+            p.move(to: c)
+            p.addLine(to: CGPoint(x: c.x + CGFloat(cos(a - spread)) * len, y: c.y + CGFloat(sin(a - spread)) * len))
+            p.addLine(to: CGPoint(x: c.x + CGFloat(cos(a + spread)) * len, y: c.y + CGFloat(sin(a + spread)) * len))
+            p.closeSubpath()
+            ctx.saveGState()
+            ctx.addPath(p)
+            ctx.clip()
+            let ray = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFE2A0).with(alpha: 0.38 * k).cg, RGBA(hex: 0xFFB04A).with(alpha: 0).cg] as CFArray, locations: [0, 1])!
+            ctx.drawRadialGradient(ray, startCenter: c, startRadius: 0, endCenter: c, endRadius: len, options: [])
+            ctx.restoreGState()
+        }
+        // hot core
+        let core = CGGradient(colorsSpace: space, colors: [RGBA(hex: 0xFFF1C2).with(alpha: 0.9 * k).cg, RGBA(hex: 0xFFB13B).with(alpha: 0.55 * k).cg, sun.with(alpha: 0).cg] as CFArray,
+                              locations: [0, 0.3, 1])!
+        ctx.drawRadialGradient(core, startCenter: c, startRadius: 0, endCenter: c, endRadius: r.height * 0.42, options: [])
+        // sparks
+        for _ in 0..<70 {
+            let ang = rng.next() * .pi * 2
+            let dist = (0.1 + rng.next() * 0.9) * Double(r.width) * 0.5
+            let p = CGPoint(x: c.x + CGFloat(cos(ang) * dist), y: c.y + CGFloat(sin(ang) * dist * 0.8))
+            let s = CGFloat(1 + rng.next() * 2.4)
+            ctx.setFillColor(RGBA(hex: 0xFFD27A).with(alpha: (0.35 + rng.next() * 0.6) * k).cg)
+            ctx.fillEllipse(in: CGRect(x: p.x - s / 2, y: p.y - s / 2, width: s, height: s))
+        }
+        ctx.restoreGState()
+    }
+
     static func drawGlow(_ c: RGBA, strength: Double, around r: CGRect, ctx: CGContext) {
         let center = CGPoint(x: r.midX, y: r.minY + r.height * 0.42)
         let radius = max(r.width, r.height) * 0.62
@@ -252,6 +302,7 @@ enum Renderer {
     /// The block's lines after applying the date and capitals.
     static func lines(of b: TextBlock, date: Date) -> [String] {
         var t = b.dateFormat.map { $0.format(date) } ?? b.text
+        if t.contains("@DAY") { t = t.replacingOccurrences(of: "@DAY", with: DateFormat.dayOnly.format(date)) }
         if b.uppercase { t = t.uppercased() }
         return t.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
@@ -260,11 +311,12 @@ enum Renderer {
     static func attributed(_ line: String, b: TextBlock, size: CGFloat, outline: Bool) -> NSAttributedString {
         let font = Fonts.font(b.font, size: size)
         let out = NSMutableAttributedString()
-        var accent = false
+        var accent = 0 // 0 normal, 1 [accent], 2 {accent2}
         var buf = ""
         func flush() {
             if buf.isEmpty { return }
-            var a: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: (accent ? b.accent : b.color).ns]
+            let col = accent == 1 ? b.accent : accent == 2 ? b.accent2 : b.color
+            var a: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: col.ns]
             if outline {
                 a[.strokeColor] = b.strokeColor.ns
                 a[.strokeWidth] = b.stroke * 2 // positive = outline only; it's centred on the edge, so double it
@@ -274,7 +326,8 @@ enum Renderer {
             buf = ""
         }
         for ch in line {
-            if ch == "[" { flush(); accent = true } else if ch == "]" { flush(); accent = false } else { buf.append(ch) }
+            if ch == "[" { flush(); accent = 1 } else if ch == "{" { flush(); accent = 2 }
+            else if ch == "]" || ch == "}" { flush(); accent = 0 } else { buf.append(ch) }
         }
         flush()
         return out
@@ -282,14 +335,14 @@ enum Renderer {
 
     /// Font size so every line fits the box (each line can be as big as its width allows, up to maxSize).
     static func sizes(for lines: [String], b: TextBlock) -> [CGFloat] {
-        let pad: CGFloat = b.style == .plain ? 0 : 28
+        let pad: CGFloat = b.style == .boxed ? (b.boxPad >= 0.3 ? 2 * CGFloat(b.maxSize) * 0.7 : 28) : (b.style == .band ? 28 : 0)
         var s: [CGFloat] = lines.map { line in
             let probe = attributed(line, b: b, size: 100, outline: false).size().width
             let fit = probe > 0 ? 100 * (CGFloat(b.w) - pad) / probe : CGFloat(b.maxSize)
             return min(CGFloat(b.maxSize), fit)
         }
         // keep lines from varying wildly: no line more than 1.6× the smallest
-        if let mn = s.min() { s = s.map { min($0, mn * 1.6) } }
+        if let mn = s.min() { s = s.map { min($0, mn * (b.sameSize ? 1 : 1.6)) } }
         let total = s.reduce(0) { $0 + $1 * CGFloat(b.lineSpacing) }
         if total > CGFloat(b.h) && total > 0 { s = s.map { $0 * CGFloat(b.h) / total } }
         return s
@@ -313,7 +366,7 @@ enum Renderer {
             let ts = fill.size()
             let lineH = size * CGFloat(b.lineSpacing)
             var x: CGFloat
-            let inset: CGFloat = b.style == .boxed ? 14 : 0
+            let inset: CGFloat = b.style == .boxed ? (b.boxPad >= 0.3 ? size * 0.7 : 14) : 0
             switch b.align {
             case .left: x = CGFloat(b.x) + inset
             case .center: x = CGFloat(b.x) + (CGFloat(b.w) - ts.width) / 2
@@ -324,12 +377,22 @@ enum Renderer {
             let glyphH = font.capHeight
             let baselineY = y + (lineH + glyphH) / 2
             let origin = CGPoint(x: x, y: baselineY - font.ascender)
-            let box = CGRect(x: x - inset, y: baselineY - glyphH - size * 0.16, width: ts.width + inset * 2, height: glyphH + size * 0.32)
+            let pad = size * CGFloat(b.boxPad)
+            let box = CGRect(x: x - inset, y: baselineY - glyphH - pad, width: ts.width + inset * 2, height: glyphH + pad * 2)
             if b.style == .boxed {
                 let ctx = NSGraphicsContext.current!.cgContext
+                let rr = min(CGFloat(b.boxRadius), box.height / 2)
                 ctx.setFillColor(b.boxColor.cg)
-                ctx.addPath(CGPath(roundedRect: box, cornerWidth: 6, cornerHeight: 6, transform: nil))
+                ctx.addPath(CGPath(roundedRect: box, cornerWidth: rr, cornerHeight: rr, transform: nil))
                 ctx.fillPath()
+            }
+            if b.style == .rule && i == 0 {
+                let ctx = NSGraphicsContext.current!.cgContext
+                ctx.setFillColor(b.accent.cg)
+                let barH = max(3, size * 0.16)
+                let barW = max(ts.width, CGFloat(b.w))
+                let bx: CGFloat = b.align == .right ? CGFloat(b.x + b.w) - barW : (b.align == .center ? CGFloat(b.x) + (CGFloat(b.w) - barW) / 2 : CGFloat(b.x))
+                ctx.fill(CGRect(x: bx, y: baselineY - glyphH - size * 0.7 - barH, width: barW, height: barH))
             }
             // Draw with Core Text so the outline uses rounded corners (no spiky letter tips).
             let ctx = NSGraphicsContext.current!.cgContext
@@ -357,7 +420,10 @@ enum Renderer {
                 ctx.textPosition = CGPoint(x: origin.x, y: baselineY)
             }
             ctx.setTextDrawingMode(.fill)
-            if b.shadow && b.stroke <= 0 {
+            if b.hardShadow {
+                // solid offset shadow, like a sticker
+                ctx.setShadow(offset: CGSize(width: size * 0.035, height: -size * 0.04), blur: 0, color: NSColor.black.withAlphaComponent(0.88).cgColor)
+            } else if b.shadow && b.stroke <= 0 {
                 ctx.setShadow(offset: CGSize(width: 0, height: -size * 0.04), blur: size * 0.12, color: NSColor.black.withAlphaComponent(0.75).cgColor)
             }
             CTLineDraw(ctLine, ctx)
@@ -366,5 +432,15 @@ enum Renderer {
             y += lineH
         }
         return rects
+    }
+}
+
+/// Same "random" numbers every time for the same seed, so a design looks identical on every export.
+struct SeededRandom {
+    var state: UInt64
+    init(seed: UInt64) { state = seed &* 6364136223846793005 &+ 1442695040888963407 }
+    mutating func next() -> Double {
+        state = state &* 6364136223846793005 &+ 1442695040888963407
+        return Double((state >> 33) & 0xFFFFFF) / Double(0xFFFFFF)
     }
 }

@@ -4,11 +4,12 @@ import Foundation
 /// dark matte backgrounds, restrained red, text kept on the side away from the face,
 /// "APOSTLE JOSHUA SELMAN" along the bottom, and straight (never curved) lettering.
 enum Template: String, CaseIterable, Identifiable {
-    case psalm, dated, morning, doctor, blank
+    case earlyMorning, psalm, dated, morning, doctor, blank
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .earlyMorning: return "Early Morning Prayer"
         case .psalm: return "Psalm Prayer"
         case .dated: return "Dated Prayer"
         case .morning: return "Morning (plain)"
@@ -19,6 +20,7 @@ enum Template: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .earlyMorning: return "sun.horizon.fill"
         case .psalm: return "book.closed.fill"
         case .dated: return "calendar"
         case .morning: return "sunrise.fill"
@@ -41,6 +43,23 @@ enum Template: String, CaseIterable, Identifiable {
                                  strokeColor: .black, stroke: 0, shadow: false, align: .center, style: .band,
                                  boxColor: RGBA.deepRed.with(alpha: 0.92), lineSpacing: 1, uppercase: true)
         switch self {
+        case .earlyMorning:
+            // Matches the Friday "Speak into your morning" design: night-blue to sunrise, Poppins, yellow date pill.
+            d.background = Background(kind: .sunrise, color1: RGBA(hex: 0x0A0B2E), color2: RGBA(hex: 0x2A0E36), darken: 0,
+                                      vignette: 0.18, glow: RGBA(hex: 0xFF8A1A), glowStrength: 0.9, seed: 9)
+            d.subject.centerX = 0.80
+            d.subject.height = 1.02
+            d.subject.bottom = 1.03
+            d.blocks = [
+                TextBlock(name: "Date", text: "", x: 50, y: 40, w: 650, h: 74, font: "Poppins-Bold", maxSize: 38,
+                          color: RGBA(hex: 0x1C1406), stroke: 0, shadow: false, align: .left, style: .boxed,
+                          boxColor: .sunGold, boxRadius: 14, boxPad: 0.48, dateFormat: .dayCommaDateYear),
+                TextBlock(name: "Title", text: "SPEAK INTO YOUR\n[@DAY MORNING]\nBEFORE THE\n{ENEMY DOES}", x: 54, y: 168, w: 840, h: 418,
+                          font: "Poppins-ExtraBold", maxSize: 110, color: .white, accent: .sunGold, accent2: .orangeRed,
+                          stroke: 0, shadow: true, hardShadow: true, align: .left, lineSpacing: 1.1, sameSize: true),
+                TextBlock(name: "Footer", text: "EARLY MORNING PRAYER", x: 57, y: 636, w: 320, h: 64, font: "Poppins-SemiBold", maxSize: 26,
+                          color: RGBA(1, 1, 1, 0.92), accent: .sunGold, stroke: 0, shadow: false, align: .left, style: .rule),
+            ]
         case .psalm:
             d.background = Background(kind: .clouds, color1: RGBA(hex: 0x05070C), color2: RGBA(hex: 0x1B2130), darken: 0.15,
                                       vignette: 0.55, glow: RGBA(hex: 0xC4161C), glowStrength: 0.45, seed: 11)

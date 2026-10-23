@@ -85,7 +85,7 @@ struct Inspector: View {
             switch m.design.background.kind {
             case .solid:
                 ColorPicker("Colour", selection: colorBinding($m.design.background.color1), supportsOpacity: false)
-            case .gradient, .clouds:
+            case .gradient, .clouds, .sunrise:
                 ColorPicker("Dark colour", selection: colorBinding($m.design.background.color1), supportsOpacity: false)
                 ColorPicker("Light colour", selection: colorBinding($m.design.background.color2), supportsOpacity: false)
                 if m.design.background.kind == .clouds {
@@ -138,7 +138,7 @@ struct BlockEditor: View {
                         .font(.system(size: 13, design: .monospaced))
                         .frame(height: 78)
                         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
-                    Text("One line per row. Put [brackets] around words to colour them.")
+                    Text("One line per row. [Words] get the first colour, {words} the second. @DAY becomes the weekday.")
                         .font(.caption).foregroundColor(.secondary)
                 }
                 Picker("Font", selection: b.font) {
@@ -147,18 +147,28 @@ struct BlockEditor: View {
                 LabeledSlider(title: "Max size", value: b.maxSize, range: 24...300, format: "%.0f")
                 HStack {
                     ColorPicker("Text", selection: colorBinding(b.color))
-                    ColorPicker("[Words]", selection: colorBinding(b.accent), supportsOpacity: false)
+                    ColorPicker("[ ]", selection: colorBinding(b.accent), supportsOpacity: false)
+                    ColorPicker("{ }", selection: colorBinding(b.accent2), supportsOpacity: false)
                 }
+                Toggle("Every line the same size", isOn: b.sameSize)
                 LabeledSlider(title: "Outline", value: b.stroke, range: 0...16, format: "%.0f")
                 if b.wrappedValue.stroke > 0 {
                     ColorPicker("Outline colour", selection: colorBinding(b.strokeColor), supportsOpacity: false)
                 }
                 Toggle("Shadow", isOn: b.shadow)
+                Toggle("Solid offset shadow", isOn: b.hardShadow)
                 Picker("Look", selection: b.style) {
                     ForEach(LineStyle.allCases) { s in Text(s.title).tag(s) }
                 }
-                if b.wrappedValue.style != .plain {
+                if b.wrappedValue.style == .boxed || b.wrappedValue.style == .band {
                     ColorPicker("Box colour", selection: colorBinding(b.boxColor))
+                }
+                if b.wrappedValue.style == .boxed {
+                    LabeledSlider(title: "Box roundness", value: b.boxRadius, range: 0...40, format: "%.0f")
+                    LabeledSlider(title: "Box padding", value: b.boxPad, range: 0.05...0.8)
+                }
+                if b.wrappedValue.style == .rule {
+                    Text("The line uses the [ ] colour.").font(.caption).foregroundColor(.secondary)
                 }
                 Picker("Align", selection: b.align) {
                     Image(systemName: "text.alignleft").tag(TextAlign.left)
