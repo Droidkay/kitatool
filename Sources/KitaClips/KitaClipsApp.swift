@@ -50,7 +50,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &subs)
 
-        if !UserDefaults.standard.bool(forKey: "welcomeShown") {
+        if CommandLine.arguments.contains("--show") {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 800_000_000)
+                p?.show()
+            }
+        } else if !UserDefaults.standard.bool(forKey: "welcomeShown") {
             UserDefaults.standard.set(true, forKey: "welcomeShown")
             panel.show()
         }

@@ -16,6 +16,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var keyMonitor: Any?
     private var clickMonitor: Any?
     private let size = NSSize(width: 640, height: 560)
+    private var previousApp: NSRunningApplication?
+    private var shownAt = Date.distantPast
 
     var isShown: Bool { panel.isVisible }
 
@@ -55,7 +57,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         let vf = screen.visibleFrame
         let origin = NSPoint(x: vf.midX - size.width / 2, y: vf.maxY - size.height - 40)
         panel.setFrame(NSRect(origin: origin, size: size), display: true)
+        let front = NSWorkspace.shared.frontmostApplication
+        if front?.bundleIdentifier != Bundle.main.bundleIdentifier { previousApp = front }
+        shownAt = Date()
         panel.alphaValue = 0
+        NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.12
@@ -65,14 +71,24 @@ final class PanelController: NSObject, NSWindowDelegate {
         installMonitors()
     }
 
-    func hide() {
+    func hide(returnFocus: Bool = true) {
         guard panel.isVisible else { return }
         removeMonitors()
         panel.orderOut(nil)
+        if returnFocus, NSApp.isActive { previousApp?.activate() }
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        hide()
+        // Ignore the brief focus shuffle right after opening.
+        guard Date().timeIntervalSince(shownAt) > 0.4 else {
+            let me = self
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 450_000_000)
+                if me.panel.isVisible && !me.panel.isKeyWindow && !NSApp.isActive { me.hide(returnFocus: false) }
+            }
+            return
+        }
+        hide(returnFocus: false)
     }
 
     // MARK: actions
@@ -91,11 +107,11 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func finish(paste: Bool) {
-        hide()
+        hide(returnFocus: true)
         guard paste else { return }
         if Paster.trusted {
             Task {
-                try? await Task.sleep(nanoseconds: 120_000_000)
+                try? await Task.sleep(nanoseconds: 180_000_000)
                 Paster.pasteNow()
             }
         } else {
@@ -113,7 +129,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
         clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             let me = self
-            Task { @MainActor in me?.hide() }
+            Task { @MainActor in me?.hide(returnFocus: false) }
         }
     }
 

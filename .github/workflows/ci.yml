@@ -22,14 +22,15 @@ jobs:
           BIN="$(swift build -c release --show-bin-path)/KitaClips"
           if [ -f "$BIN" ]; then
             "$BIN" > run.log 2>&1 & PID=$!
-            sleep 4
+            sleep 3
             echo "copied from ci" | pbcopy; sleep 1
             printf 'func hello() {\n    print("hi")\n}' | pbcopy; sleep 1
             echo "https://kitatool.com/drop" | pbcopy; sleep 1
             echo "#7C5CFF" | pbcopy; sleep 1
             echo "Pray without ceasing. Give thanks in everything." | pbcopy; sleep 1
-            osascript -e 'tell application "System Events" to keystroke "v" using {control down, option down}' || true
-            sleep 2
+            kill $PID; sleep 1
+            "$BIN" --show > run2.log 2>&1 & PID=$!
+            sleep 4
             screencapture -x shot.png || true
             if kill -0 $PID 2>/dev/null; then echo "RUN OK (still alive after 6s)" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; cat run.log >> build.log; fi
             ls ~/Library/Application\ Support/KitaClips/ >> build.log 2>&1 || true
