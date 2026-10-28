@@ -1,0 +1,38 @@
+name: notch-robot-ci
+on:
+  push:
+    branches: [notch-robot-ci]
+permissions:
+  contents: write
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-26]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          sw_vers > build.log; xcrun swiftc --version >> build.log 2>&1
+          if swift build -c release >> build.log 2>&1; then echo "BUILD OK" >> build.log; else echo "BUILD FAILED" >> build.log; fi
+          BIN="$(swift build -c release --show-bin-path)/NotchPlayer"
+          if [ -f "$BIN" ]; then
+            APP="Notch Player.app"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+            cp "$BIN" "$APP/Contents/MacOS/NotchPlayer"; cp Info.plist "$APP/Contents/Info.plist"
+            ICONSET="$(mktemp -d)/AppIcon.iconset"; mkdir -p "$ICONSET"
+            for s in 16 32 128 256 512; do sips -z $s $s Resources/AppIcon.png --out "$ICONSET/icon_${s}x${s}.png" >/dev/null; d=$((s*2)); sips -z $d $d Resources/AppIcon.png --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null; done
+            iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" || true
+            codesign --force --deep --sign - "$APP"
+            ditto -c -k --keepParent "$APP" NotchPlayer-mac.zip
+          fi
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log
+          cp NotchPlayer-mac.zip /tmp/out/ 2>/dev/null || true
+          cd /tmp/out && git init -q && git checkout -q -b r
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git add -A && git commit -qm "result ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" r:notch-robot-result-${{ matrix.os }}
