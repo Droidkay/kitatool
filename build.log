@@ -1,0 +1,21 @@
+ProductName:		macOS
+ProductVersion:		14.8.9
+BuildVersion:		23J631
+swift-driver version: 1.90.11.1 Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+Target: arm64-apple-macosx14.0
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version-76B232A4806BA581.txt
+[3/5] Compiling KitaClips ClipStore.swift
+/Users/runner/work/kitatool/kitatool/Sources/KitaClips/Views.swift:119:18: warning: 'onChange(of:perform:)' was deprecated in macOS 14.0: Use `onChange` with a two or zero parameter action closure instead.
+                .onChange(of: store.selectedID) { id in
+                 ^
+[3/5] Write Objects.LinkFileList
+[4/5] Linking KitaClips
+Build complete! (20.37s)
+BUILD OK
+RUN OK (still alive after 6s)
+history.json
+images
+"copied from ci
+CAPTURE OK
