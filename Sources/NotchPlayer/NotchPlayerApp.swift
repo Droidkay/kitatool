@@ -134,6 +134,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         core.start()
         if CommandLine.arguments.contains("--demo") { runDemo() }
         if CommandLine.arguments.contains("--notes-test") { runNotesTest() }
+        if CommandLine.arguments.contains("--moves") {
+            core.buddy.checkInMinutes = 0
+            let r = core.robot
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                r.lastActivity = Date()
+                r.showOff()
+            }
+        }
 
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,

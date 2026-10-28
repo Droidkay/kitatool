@@ -170,7 +170,7 @@ final class NotchState: ObservableObject {
         didSet { UserDefaults.standard.set(peeksEnabled, forKey: "peeksEnabled") }
     }
     @Published var robotEnabled: Bool {
-        didSet { UserDefaults.standard.set(robotEnabled, forKey: "robotEnabled") }
+        didSet { UserDefaults.standard.set(robotEnabled, forKey: "robotEnabled"); robot.enabled = robotEnabled }
     }
 
     // Companion robot
@@ -211,6 +211,7 @@ final class NotchState: ObservableObject {
         pollMusic()
         requestCalendar()
         startVolumeWatch()
+        robot.start()
         let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             let me = self
             Task { @MainActor in me?.tick() }
@@ -228,6 +229,7 @@ final class NotchState: ObservableObject {
     }
 
     private func robotTick() {
+        robot.base = robotBaseMood
         buddy.tick(idle: robot.idleSeconds)
     }
 

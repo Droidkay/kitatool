@@ -215,21 +215,28 @@ struct IdleContent: View {
     @ObservedObject var s: ScreenState
 
     var body: some View {
-        HStack(spacing: 0) {
-            left.frame(width: s.flankW, alignment: .center)
-            Spacer(minLength: 0)
-            right.frame(width: s.flankW, alignment: .center)
+        ZStack {
+            if s.robotEnabled {
+                RobotSides(s: s, brain: s.robot, left: AnyView(left), right: AnyView(right))
+                RobotStage(brain: s.robot, base: s.robotBaseMood, accent: s.accent,
+                           width: s.idleSize.width, height: s.geometry.notchH,
+                           notchW: s.geometry.notchW, flankW: s.flankW, ear: s.ear)
+            } else {
+                HStack(spacing: 0) {
+                    left.frame(width: s.flankW, alignment: .center)
+                    Spacer(minLength: 0)
+                    right.frame(width: s.flankW, alignment: .center)
+                }
+                .padding(.horizontal, s.ear)
+            }
         }
-        .padding(.horizontal, s.ear)
-        .frame(height: s.geometry.notchH)
+        .frame(width: s.idleSize.width, height: s.geometry.notchH)
         .opacity(s.compactVisible ? 1 : 0)
     }
 
     @ViewBuilder
     private var left: some View {
-        if s.robotEnabled {
-            RobotFace(brain: s.robot, base: s.robotBaseMood, accent: s.accent)
-        } else if s.timerActive {
+        if s.timerActive {
             Image(systemName: s.timerFinished ? "bell.fill" : "timer")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.orange)
@@ -264,6 +271,28 @@ struct IdleContent: View {
         } else if s.showIdleInfo, let b = s.battery {
             BatteryBadge(info: b, showPercent: false)
         }
+    }
+}
+
+/// The normal left/right content, which steps aside wherever the robot is standing.
+struct RobotSides: View {
+    @ObservedObject var s: ScreenState
+    @ObservedObject var brain: RobotBrain
+    let left: AnyView
+    let right: AnyView
+
+    var body: some View {
+        HStack(spacing: 0) {
+            left.frame(width: s.flankW, alignment: .center)
+                .opacity(brain.pos < -0.3 ? 0 : 1)
+                .scaleEffect(brain.pos < -0.3 ? 0.6 : 1)
+            Spacer(minLength: 0)
+            right.frame(width: s.flankW, alignment: .center)
+                .opacity(brain.pos > 0.3 ? 0 : 1)
+                .scaleEffect(brain.pos > 0.3 ? 0.6 : 1)
+        }
+        .padding(.horizontal, s.ear)
+        .animation(.easeInOut(duration: 0.6), value: brain.pos)
     }
 }
 
