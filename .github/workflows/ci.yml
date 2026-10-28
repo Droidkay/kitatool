@@ -1,0 +1,38 @@
+name: clips-ci
+on:
+  push:
+    branches: [clips-ci]
+permissions:
+  contents: write
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-26]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          sw_vers > build.log; xcrun swiftc --version >> build.log 2>&1
+          if swift build -c release >> build.log 2>&1; then echo "BUILD OK" >> build.log; else echo "BUILD FAILED" >> build.log; fi
+      - name: Smoke test
+        run: |
+          BIN="$(swift build -c release --show-bin-path)/KitaClips"
+          if [ -f "$BIN" ]; then
+            "$BIN" > run.log 2>&1 & PID=$!
+            sleep 4
+            echo "copied from ci" | pbcopy; sleep 2
+            if kill -0 $PID 2>/dev/null; then echo "RUN OK (still alive after 6s)" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; cat run.log >> build.log; fi
+            ls ~/Library/Application\ Support/KitaClips/ >> build.log 2>&1 || true
+            grep -o '"copied from ci' ~/Library/Application\ Support/KitaClips/history.json >> build.log 2>&1 && echo "CAPTURE OK" >> build.log || echo "CAPTURE NOT SEEN" >> build.log
+          fi
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log
+          cd /tmp/out && git init -q && git checkout -q -b r
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git add -A && git commit -qm "result ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" r:clips-result-${{ matrix.os }}
