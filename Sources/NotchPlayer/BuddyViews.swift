@@ -168,7 +168,7 @@ struct BuddyPane: View {
             }
             .frame(maxHeight: .infinity)
             .onAppear { if let last = buddy.lines.last { proxy.scrollTo(last.id, anchor: .bottom) } }
-            .onChange(of: buddy.lines) { lines in
+            .onChange(of: buddy.lines) { _, lines in
                 if let last = lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
             }
         }
