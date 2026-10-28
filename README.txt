@@ -1,4 +1,4 @@
-NOTCH PLAYER 3.4  (Alcove-style)
+NOTCH PLAYER 3.5  (Alcove-style)
 
 Install:   cd ~/Downloads/NotchPlayer && bash build.sh
 
@@ -38,3 +38,13 @@ New in 3.4 - Smarter robot + iPhone-style notifications
   Breathe; today's active time, breaks, water and focus sessions.
 - Morning greeting, and an end-of-day summary after 9pm.
 - Menu bar: Robot Check-ins (30 min / 1 h / 2 h / Off), Change My Name, App Notifications, Bible Verses.
+
+New in 3.5 - A robot that's actually alive
+- It roams the whole notch: walks and runs from one side to the other, disappearing behind the
+  notch and coming out the other side. The song art, timer and battery step aside wherever it stands.
+- Moves: walk, run, moonwalk, hop, bounce, jump, spin, wave ("hi!"), stretch, yawn, look around,
+  peek out from behind the notch, dance, trip over and get back up (seeing stars), celebrate.
+- It runs over to wave when your cursor comes near the notch, jumps when a notification arrives,
+  dances and moonwalks to music, stretches and waves when you come back from being away,
+  yawns late at night, and sleeps (zzz) when you're idle.
+- It has arms, feet and a mouth now, so its faces change too.
