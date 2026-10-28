@@ -39,7 +39,7 @@ jobs:
       - name: Publish result
         if: always()
         run: |
-          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null; cp shot.png /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log
+          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log; cp shot.png /tmp/out/ 2>/dev/null || true
           cd /tmp/out && git init -q && git checkout -q -b r
           git config user.name ci && git config user.email ci@users.noreply.github.com
           git add -A && git commit -qm "result ${GITHUB_SHA}"
