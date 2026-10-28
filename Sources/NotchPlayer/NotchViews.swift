@@ -305,14 +305,28 @@ struct PeekContent: View {
             return Info(symbol: sym, tint: .white, title: "", subtitle: "", bar: muted ? 0 : level)
         case .robot(let message):
             return Info(symbol: "face.smiling", tint: .cyan, title: message, subtitle: "", useRobot: true)
+        case .checkIn(let message):
+            return Info(symbol: "face.smiling", tint: .cyan, title: message, subtitle: "", useRobot: true)
+        case .notification(let n):
+            return Info(symbol: "bell.fill", tint: .white, title: n.title, subtitle: n.body)
         case .none:
             return Info(symbol: "circle", tint: .white, title: "", subtitle: "")
         }
     }
 
     var body: some View {
+        if case .notification(let n) = s.peek {
+            NotificationBanner(s: s, note: n)
+        } else if case .checkIn(let text) = s.peek {
+            CheckInBanner(s: s, text: text)
+        } else {
+            standard
+        }
+    }
+
+    private var standard: some View {
         let i = info
-        VStack(spacing: 0) {
+        return VStack(spacing: 0) {
             HStack(spacing: 0) {
                 Group {
                     if i.useRobot {
@@ -386,7 +400,7 @@ struct ExpandedContent: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                HStack(spacing: 3) {
+                HStack(spacing: 1) {
                     ForEach(NotchPage.allCases) { p in
                         Button {
                             s.page = p
@@ -394,7 +408,12 @@ struct ExpandedContent: View {
                             Image(systemName: p.symbol)
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(s.page == p ? Color.black : Color.white.opacity(0.7))
-                                .frame(width: 24, height: 22)
+                                .frame(width: 23, height: 22)
+                                .overlay(alignment: .topTrailing) {
+                                    if p == .alerts && !s.notes.isEmpty && s.page != .alerts {
+                                        Circle().fill(Color.red).frame(width: 6, height: 6).offset(x: -2, y: 2)
+                                    }
+                                }
                                 .background(
                                     Capsule().fill(s.page == p ? Color.white : Color.white.opacity(0.0)))
                         }
@@ -415,12 +434,14 @@ struct ExpandedContent: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
             .frame(height: s.geometry.notchH)
 
             Group {
                 switch s.page {
                 case .music: MusicPane(s: s)
+                case .buddy: BuddyPane(s: s, buddy: s.core.buddy)
+                case .alerts: AlertsPane(s: s)
                 case .calendar: CalendarPane(s: s)
                 case .timer: TimerPane(s: s)
                 case .shelf: ShelfPane(s: s)

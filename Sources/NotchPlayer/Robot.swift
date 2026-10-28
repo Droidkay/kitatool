@@ -51,6 +51,9 @@ extension NotchState {
         if timerFinished { return .celebrate }
         if case .charging = peek { return .charging }
         if case .robot = peek { return .happy }
+        if case .checkIn = peek { return .curious }
+        if case .notification = peek { return .surprised }
+        if buddy?.breathingUntil != nil { return .focused }
         if let t = track, t.playing { return .dancing }
         if timerRunning { return .focused }
         if let b = battery, !b.charging, b.level <= 20 { return .tired }

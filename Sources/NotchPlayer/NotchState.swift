@@ -60,11 +60,13 @@ struct NotchGeometry {
 // MARK: - Small models
 
 enum NotchPage: Int, CaseIterable, Identifiable {
-    case music, calendar, timer, shelf
+    case music, buddy, alerts, calendar, timer, shelf
     var id: Int { rawValue }
     var symbol: String {
         switch self {
         case .music: return "music.note"
+        case .buddy: return "face.smiling"
+        case .alerts: return "bell.badge"
         case .calendar: return "calendar"
         case .timer: return "timer"
         case .shelf: return "tray.full"
@@ -81,6 +83,17 @@ enum NotchPeek: Equatable {
     case event(String, Int)   // title, minutes until
     case volume(Double, Bool) // level 0...1, muted
     case robot(String)        // the companion robot says something
+    case checkIn(String)      // the robot asks how you're doing
+    case notification(NotchNote)
+}
+
+extension NotchPeek {
+    var isImportant: Bool {
+        switch self {
+        case .notification, .checkIn: return true
+        default: return false
+        }
+    }
 }
 
 struct CalEvent: Identifiable {
@@ -162,8 +175,17 @@ final class NotchState: ObservableObject {
 
     // Companion robot
     let robot: RobotBrain
-    private var activeSeconds = 0
     private var fullChargeShown = false
+    private(set) var buddy: Companion!
+
+    // App notifications (iPhone-style banners)
+    @Published var notes: [NotchNote] = []
+    @Published var notesStatus: NotificationReader.Status = .unknown
+    @Published var notesEnabled: Bool {
+        didSet { UserDefaults.standard.set(notesEnabled, forKey: "notesEnabled") }
+    }
+    private let noteReader = NotificationReader()
+    private var peekQueue: [(NotchPeek, Double)] = []
 
     init() {
         let d = UserDefaults.standard
@@ -172,6 +194,8 @@ final class NotchState: ObservableObject {
         peeksEnabled = d.object(forKey: "peeksEnabled") as? Bool ?? true
         robotEnabled = d.object(forKey: "robotEnabled") as? Bool ?? true
         robot = RobotBrain()
+        notesEnabled = d.object(forKey: "notesEnabled") as? Bool ?? true
+        buddy = Companion(core: self)
     }
 
     // MARK: layout
@@ -193,10 +217,7 @@ final class NotchState: ObservableObject {
         }
         RunLoop.main.add(t, forMode: .common)
         ticker = t
-        Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            self.robotSay(NotchState.robotGreeting(), seconds: 4)
-        }
+        if notesEnabled { pollNotes() }
     }
 
     // MARK: companion robot
@@ -207,17 +228,24 @@ final class NotchState: ObservableObject {
     }
 
     private func robotTick() {
-        let idle = robot.idleSeconds
-        if idle < 120 {
-            activeSeconds += 1
-        } else if idle > 300 {
-            activeSeconds = 0
-        }
-        if activeSeconds >= 3600 {
-            activeSeconds = 0
-            robotSay("An hour in. Time to stretch 🙆", seconds: 5)
-        }
+        buddy.tick(idle: robot.idleSeconds)
     }
+
+    // MARK: app notifications
+
+    func pollNotes() {
+        let fresh = noteReader.poll()
+        if notesStatus != noteReader.status { notesStatus = noteReader.status }
+        guard !fresh.isEmpty else { return }
+        notes.insert(contentsOf: fresh.reversed(), at: 0)
+        if notes.count > 30 { notes = Array(notes.prefix(30)) }
+        for n in fresh.suffix(3) {
+            showPeek(.notification(n), seconds: 5)
+        }
+        if robotEnabled { robot.react(.surprised, seconds: 1.2) }
+    }
+
+    func clearNotes() { notes.removeAll() }
 
     private var lastWasCharging = false
 
@@ -230,6 +258,7 @@ final class NotchState: ObservableObject {
         if tickCount % 15 == 0 { checkUpcomingEvent() }
         pollMusic()
         if robotEnabled { robotTick() }
+        if notesEnabled && tickCount % 2 == 0 { pollNotes() }
 
         if timerRunning {
             timerRemaining = max(0, Int(timerEnd.timeIntervalSinceNow.rounded(.up)))
@@ -238,6 +267,7 @@ final class NotchState: ObservableObject {
                 timerFinished = true
                 NSSound(named: "Glass")?.play()
                 showPeek(.timerDone, seconds: 6)
+                buddy.timerFinished()
                 Task {
                     try? await Task.sleep(nanoseconds: 8_000_000_000)
                     self.timerFinished = false
@@ -249,22 +279,43 @@ final class NotchState: ObservableObject {
     // MARK: peeks
 
     func showPeek(_ p: NotchPeek, seconds: Double) {
-        if case .volume = p {
-            guard hudEnabled else { return }
-        } else {
-            guard peeksEnabled else { return }
+        switch p {
+        case .volume: guard hudEnabled else { return }
+        case .notification: guard notesEnabled else { return }
+        case .checkIn, .robot: guard robotEnabled else { return }
+        default: guard peeksEnabled else { return }
+        }
+        // Don't cut off a notification or check-in: queue behind it.
+        if peek.isImportant, peekTask != nil, p != peek {
+            if case .volume = p {} else {
+                peekQueue.append((p, seconds))
+                return
+            }
         }
         peek = p
         peekTask?.cancel()
         peekTask = Task {
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             if Task.isCancelled { return }
+            self.peekTask = nil
             self.peek = .none
+            self.showNextQueued()
+        }
+    }
+
+    private func showNextQueued() {
+        guard !peekQueue.isEmpty else { return }
+        let (p, s) = peekQueue.removeFirst()
+        Task {
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            self.showPeek(p, seconds: s)
         }
     }
 
     func cancelPeek() {
         peekTask?.cancel()
+        peekTask = nil
+        peekQueue.removeAll()
         peek = .none
     }
 

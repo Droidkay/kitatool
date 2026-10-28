@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14]
+        os: [macos-14, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -17,25 +17,30 @@ jobs:
         run: |
           sw_vers > build.log; xcrun swiftc --version >> build.log 2>&1
           if swift build -c release >> build.log 2>&1; then echo "BUILD OK" >> build.log; else echo "BUILD FAILED" >> build.log; fi
+      - name: Notification reader test
+        run: |
           BIN="$(swift build -c release --show-bin-path)/NotchPlayer"
-          if [ -f "$BIN" ]; then
-            APP="Notch Player.app"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-            cp "$BIN" "$APP/Contents/MacOS/NotchPlayer"; cp Info.plist "$APP/Contents/Info.plist"
-            ICONSET="$(mktemp -d)/AppIcon.iconset"; mkdir -p "$ICONSET"
-            for s in 16 32 128 256 512; do sips -z $s $s Resources/AppIcon.png --out "$ICONSET/icon_${s}x${s}.png" >/dev/null; d=$((s*2)); sips -z $d $d Resources/AppIcon.png --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null; done
-            iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" || true
-            codesign --force --deep --sign - "$APP"
-            mkdir -p "Notch Player 3.3" && cp -R "$APP" "Notch Player 3.3/" && cp "How to install.txt" "Notch Player 3.3/"
-            ditto -c -k --keepParent "Notch Player 3.3" NotchPlayer-mac.zip
-            mkdir -p dmgroot && cp -R "$APP" dmgroot/ && cp "How to install.txt" dmgroot/ && ln -s /Applications dmgroot/Applications
-            hdiutil create -volname "Notch Player 3.3" -srcfolder dmgroot -ov -format UDZO NotchPlayer-3.3.dmg >> build.log 2>&1
-            hdiutil verify NotchPlayer-3.3.dmg >> build.log 2>&1 && echo "DMG OK" >> build.log
-          fi
+          [ -f "$BIN" ] || exit 0
+          "$BIN" --notes-test > notes.log 2>&1 & PID=$!
+          sleep 4
+          osascript -e 'display notification "Hello from the build machine" with title "CI Test"' || true
+          sleep 9
+          kill $PID 2>/dev/null || true
+          echo "--- notes test" >> build.log; grep -E "paths|status" notes.log | sort -u | head -8 >> build.log
+      - name: Demo screenshots
+        run: |
+          BIN="$(swift build -c release --show-bin-path)/NotchPlayer"
+          [ -f "$BIN" ] || exit 0
+          "$BIN" --demo > demo.log 2>&1 & PID=$!
+          sleep 5;  screencapture -x s1.png
+          sleep 9;  screencapture -x s2.png
+          sleep 9;  screencapture -x s3.png
+          if kill -0 $PID 2>/dev/null; then echo "RUN OK" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; tail -20 demo.log >> build.log; fi
       - name: Publish result
         if: always()
         run: |
-          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log
-          cp NotchPlayer-mac.zip NotchPlayer-3.3.dmg /tmp/out/ 2>/dev/null || true
+          mkdir -p /tmp/out && (cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log)
+          cp s1.png s2.png s3.png /tmp/out/ 2>/dev/null || true
           cd /tmp/out && git init -q && git checkout -q -b r
           git config user.name ci && git config user.email ci@users.noreply.github.com
           git add -A && git commit -qm "result ${GITHUB_SHA}"

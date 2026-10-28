@@ -40,14 +40,18 @@ final class ScreenState: ObservableObject {
             : CGSize(width: geometry.notchW, height: geometry.notchH)
     }
     var peekSize: CGSize {
-        CGSize(width: max(geometry.notchW + 2 * core.flankW + 2 * core.ear + 40, 340),
-               height: geometry.notchH + 42)
+        if core.peek.isImportant {
+            return CGSize(width: max(geometry.notchW + 2 * core.flankW + 2 * core.ear + 150, 440),
+                          height: geometry.notchH + 62)
+        }
+        return CGSize(width: max(geometry.notchW + 2 * core.flankW + 2 * core.ear + 40, 340),
+                      height: geometry.notchH + 42)
     }
     var expandedSize: CGSize {
-        CGSize(width: 450, height: geometry.notchH + 128)
+        CGSize(width: 540, height: geometry.notchH + 150)
     }
     var panelSize: CGSize {
-        CGSize(width: 500, height: geometry.notchH + 160)
+        CGSize(width: 590, height: geometry.notchH + 190)
     }
     var islandSize: CGSize {
         if expanded { return expandedSize }

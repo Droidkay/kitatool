@@ -97,7 +97,7 @@ final class ScreenController {
                     self.collapseTask = nil
                 }
             }
-        } else if hitRect(for: state.idleSize, pad: 2).contains(p) {
+        } else if hitRect(for: state.peek != .none ? state.peekSize : state.idleSize, pad: 2).contains(p) {
             setExpanded(true)
         }
     }
@@ -105,6 +105,11 @@ final class ScreenController {
     func setExpanded(_ value: Bool) {
         guard state.expanded != value else { return }
         if value {
+            switch state.peek {
+            case .notification: state.page = .alerts
+            case .checkIn, .robot: state.page = .buddy
+            default: break
+            }
             state.cancelPeek()
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
@@ -127,6 +132,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         buildStatusItem()
         installMonitors()
         core.start()
+        if CommandLine.arguments.contains("--demo") { runDemo() }
+        if CommandLine.arguments.contains("--notes-test") { runNotesTest() }
 
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -134,6 +141,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             let me = self
             Task { @MainActor in me?.rebuildScreens() }
+        }
+    }
+
+    // MARK: test helpers (used by the build machine)
+
+    private func runDemo() {
+        let c = core
+        let ctrls = { [weak self] in self?.controllers ?? [] }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            c.buddy.checkIn()
+            try? await Task.sleep(nanoseconds: 11_000_000_000)
+            c.showPeek(.notification(NotchNote(id: 1, bundle: "com.apple.MobileSMS", appName: "Messages",
+                                               title: "Mum", subtitle: "", body: "Have you eaten? Call me when you're free 🙏🏾",
+                                               date: Date())), seconds: 6)
+            try? await Task.sleep(nanoseconds: 7_000_000_000)
+            c.page = .buddy
+            for ctl in ctrls() { ctl.setExpanded(true) }
+            c.buddy.answer(.stressed)
+        }
+    }
+
+    private func runNotesTest() {
+        let r = NotificationReader()
+        print("paths:", NotificationReader.candidatePaths())
+        Task { @MainActor in
+            for _ in 0..<12 {
+                let n = r.poll()
+                print("status:", r.status, "db:", r.dbPath ?? "-", "new:", n.map { "\($0.appName): \($0.title) / \($0.body)" })
+                fflush(stdout)
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
         }
     }
 
@@ -216,7 +255,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("Show Clock When Idle", 1, core.showIdleInfo),
             ("Volume HUD", 2, core.hudEnabled),
             ("Banners (songs, charging, events)", 3, core.peeksEnabled),
-            ("Companion Robot", 4, core.robotEnabled)
+            ("Companion Robot", 4, core.robotEnabled),
+            ("App Notifications in the Notch", 5, core.notesEnabled),
+            ("Bible Verses from the Robot", 6, core.buddy.verses)
         ]
         for (title, tag, on) in toggles {
             let item = NSMenuItem(title: title, action: #selector(toggleSetting(_:)), keyEquivalent: "")
@@ -225,6 +266,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item.state = on ? .on : .off
             menu.addItem(item)
         }
+        let checkMenu = NSMenu()
+        for (title, mins) in [("Every 30 minutes", 30), ("Every hour", 60), ("Every 2 hours", 120), ("Off", 0)] {
+            let i = NSMenuItem(title: title, action: #selector(setCheckIn(_:)), keyEquivalent: "")
+            i.target = self
+            i.tag = mins
+            i.state = core.buddy.checkInMinutes == mins ? .on : .off
+            checkMenu.addItem(i)
+        }
+        let checkItem = NSMenuItem(title: "Robot Check-ins", action: nil, keyEquivalent: "")
+        checkItem.submenu = checkMenu
+        menu.addItem(checkItem)
+        let rename = NSMenuItem(title: "Change My Name…", action: #selector(changeName), keyEquivalent: "")
+        rename.target = self
+        menu.addItem(rename)
+        let notifAccess = NSMenuItem(title: "Allow Notifications (Full Disk Access)…", action: #selector(openNotifAccess), keyEquivalent: "")
+        notifAccess.target = self
+        menu.addItem(notifAccess)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit Notch Player", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
@@ -243,7 +301,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case 1: core.showIdleInfo.toggle(); sender.state = core.showIdleInfo ? .on : .off
         case 2: core.hudEnabled.toggle(); sender.state = core.hudEnabled ? .on : .off
         case 4: core.robotEnabled.toggle(); sender.state = core.robotEnabled ? .on : .off
+        case 5: core.notesEnabled.toggle(); sender.state = core.notesEnabled ? .on : .off
+        case 6: core.buddy.verses.toggle(); sender.state = core.buddy.verses ? .on : .off
         default: core.peeksEnabled.toggle(); sender.state = core.peeksEnabled ? .on : .off
+        }
+    }
+
+    @objc private func setCheckIn(_ sender: NSMenuItem) {
+        core.buddy.checkInMinutes = sender.tag
+        sender.menu?.items.forEach { $0.state = $0.tag == sender.tag ? .on : .off }
+    }
+
+    @objc private func openNotifAccess() {
+        NotificationReader.openFullDiskAccessSettings()
+    }
+
+    @objc private func changeName() {
+        let alert = NSAlert()
+        alert.messageText = "What should the robot call you?"
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
+        field.stringValue = core.buddy.name
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn {
+            let n = field.stringValue.trimmingCharacters(in: .whitespaces)
+            if !n.isEmpty { core.buddy.name = n }
         }
     }
 
