@@ -1,4 +1,4 @@
-NOTCH PLAYER 3.5  (Alcove-style)
+NOTCH PLAYER 3.6  (Alcove-style)
 
 Install:   cd ~/Downloads/NotchPlayer && bash build.sh
 
@@ -48,3 +48,10 @@ New in 3.5 - A robot that's actually alive
   dances and moonwalks to music, stretches and waves when you come back from being away,
   yawns late at night, and sleeps (zzz) when you're idle.
 - It has arms, feet and a mouth now, so its faces change too.
+
+New in 3.6 - Kita Clips in the notch
+- New Clips tab (clipboard icon): your recent Kita Clips history as cards. Tap one to copy it.
+  Pinned clips come first. "Open Kita Clips" opens the full window.
+- When you copy something, a quick "Copied" banner drops from the notch
+  (turn off in the menu bar icon: Show "Copied" in the Notch).
+- Needs Kita Clips 2.1 running.
