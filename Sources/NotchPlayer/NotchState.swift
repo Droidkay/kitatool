@@ -188,7 +188,8 @@ final class NotchState: ObservableObject {
         requestCalendar()
         startVolumeWatch()
         let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            let me = self
+            Task { @MainActor in me?.tick() }
         }
         RunLoop.main.add(t, forMode: .common)
         ticker = t

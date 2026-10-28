@@ -131,7 +131,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.rebuildScreens() }
+            let me = self
+            Task { @MainActor in me?.rebuildScreens() }
         }
     }
 
