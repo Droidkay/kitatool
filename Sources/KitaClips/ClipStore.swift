@@ -115,11 +115,11 @@ final class ClipStore: ObservableObject {
         if types.contains(where: { ClipStore.skipTypes.contains($0) }) { return }
 
         let front = NSWorkspace.shared.frontmostApplication
-        let bundle = front?.bundleIdentifier ?? ""
-        if ClipStore.alwaysIgnored.contains(bundle) || ignoredBundles.contains(bundle) { return }
-        let isSelf = bundle == Bundle.main.bundleIdentifier || front?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+        let frontBundle = front?.bundleIdentifier ?? ""
+        if ClipStore.alwaysIgnored.contains(frontBundle) || ignoredBundles.contains(frontBundle) { return }
+        let isSelf = frontBundle == Bundle.main.bundleIdentifier || front?.processIdentifier == ProcessInfo.processInfo.processIdentifier
         let appName = isSelf ? nil : front?.localizedName
-        let bundle = isSelf ? "" : bundle
+        let bundle = isSelf ? "" : frontBundle
 
         if captureFiles,
            let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
