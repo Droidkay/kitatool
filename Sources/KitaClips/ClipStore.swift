@@ -40,7 +40,7 @@ final class ClipStore: ObservableObject {
 
     // MARK: storage locations
 
-    static let folder: URL = {
+    nonisolated static let folder: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let dir = base.appendingPathComponent("KitaClips", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir.appendingPathComponent("images"), withIntermediateDirectories: true)
@@ -48,7 +48,7 @@ final class ClipStore: ObservableObject {
     }()
     private var historyURL: URL { ClipStore.folder.appendingPathComponent("history.json") }
     private var legacyURL: URL { ClipStore.folder.appendingPathComponent("clips.json") }
-    static func imageURL(_ name: String) -> URL { folder.appendingPathComponent("images").appendingPathComponent(name) }
+    nonisolated static func imageURL(_ name: String) -> URL { folder.appendingPathComponent("images").appendingPathComponent(name) }
 
     init() {
         let d = UserDefaults.standard
