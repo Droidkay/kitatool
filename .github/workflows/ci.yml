@@ -31,7 +31,7 @@ jobs:
            {"id":"55555555-5555-5555-5555-555555555555","kind":"text","text":"MY NIGHT OF TURNAROUND: PRAY THIS BEFORE YOU SLEEP","lastUsed":"$NOW","created":"$NOW","pinned":false,"useCount":0}]
           JSON
           "$BIN" --clips-demo > clips.log 2>&1 & PID=$!
-          sleep 6; screencapture -x clips.png
+          sleep 6; screencapture -x clips.png; osascript -e "tell application \"System Events\" to key code 53" || true
           if kill -0 $PID 2>/dev/null; then echo "RUN OK" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; cat clips.log >> build.log; fi
       - name: Publish result
         if: always()

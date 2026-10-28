@@ -140,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let ctrls = { [weak self] in self?.controllers ?? [] }
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 2_500_000_000)
+                c.cancelPeek()
                 c.page = .clips
                 for ctl in ctrls() { ctl.setExpanded(true) }
             }
