@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-26]
+        os: [macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -26,12 +26,15 @@ jobs:
             iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" || true
             codesign --force --deep --sign - "$APP"
             ditto -c -k --keepParent "$APP" NotchPlayer-mac.zip
+            mkdir -p dmgroot && cp -R "$APP" dmgroot/ && ln -s /Applications dmgroot/Applications
+            hdiutil create -volname "Notch Player 3.3" -srcfolder dmgroot -ov -format UDZO NotchPlayer-3.3.dmg >> build.log 2>&1
+            hdiutil verify NotchPlayer-3.3.dmg >> build.log 2>&1 && echo "DMG OK" >> build.log
           fi
       - name: Publish result
         if: always()
         run: |
           mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log
-          cp NotchPlayer-mac.zip /tmp/out/ 2>/dev/null || true
+          cp NotchPlayer-mac.zip NotchPlayer-3.3.dmg /tmp/out/ 2>/dev/null || true
           cd /tmp/out && git init -q && git checkout -q -b r
           git config user.name ci && git config user.email ci@users.noreply.github.com
           git add -A && git commit -qm "result ${GITHUB_SHA}"
