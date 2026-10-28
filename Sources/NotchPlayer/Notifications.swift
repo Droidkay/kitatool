@@ -22,6 +22,9 @@ final class NotificationReader {
     private var lastID: Int64 = -1
     private(set) var dbPath: String?
 
+    /// macOS housekeeping notices that shouldn't pop out of the notch.
+    static let skipped: Set<String> = ["com.apple.btmnotificationagent", "com.apple.UserNotificationCenter"]
+
     static func candidatePaths() -> [String] {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var out = [home + "/Library/Group Containers/group.com.apple.usernoted/db2/db"]
@@ -89,6 +92,7 @@ final class NotificationReader {
             let bundle = sqlite3_column_text(st, 1).map { String(cString: $0) } ?? ""
             guard let blob = sqlite3_column_blob(st, 2) else { continue }
             let data = Data(bytes: blob, count: Int(sqlite3_column_bytes(st, 2)))
+            if NotificationReader.skipped.contains(bundle) || bundle == Bundle.main.bundleIdentifier { continue }
             if let note = NotificationReader.parse(id: id, bundle: bundle, data: data) {
                 out.append(note)
             }

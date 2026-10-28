@@ -1,4 +1,4 @@
-NOTCH PLAYER 3.3  (Alcove-style)
+NOTCH PLAYER 3.4  (Alcove-style)
 
 Install:   cd ~/Downloads/NotchPlayer && bash build.sh
 
@@ -24,3 +24,17 @@ New in 3.3 - Companion Robot
 - It greets you when the app starts, says "All charged up" at 100%, and reminds you to stretch after an hour of use.
 - Turn it off from the menu bar icon: Companion Robot.
 - Opens by itself after a restart (Open at Login is on from the first run). Untick it in the menu bar icon to stop that.
+
+New in 3.4 - Smarter robot + iPhone-style notifications
+- Notifications: messages from WhatsApp, Messages, Mail, Slack etc. drop out of the notch
+  like on iPhone (app icon, who it's from, the message). Hover to see recent ones; click one to open the app.
+  Needs Full Disk Access: System Settings > Privacy & Security > Full Disk Access > turn on Notch Player,
+  then quit and reopen it. Tip: set an app's banner style to None in System Settings > Notifications
+  so you only see it in the notch.
+- The robot checks on you every hour of active use: how long since your last break, music,
+  your next meeting, water. Hover the notch to answer: Great / Okay / Tired / Stressed.
+  Tired starts a 5-minute break timer. Stressed starts a 1-minute breathing exercise (with a Bible verse).
+- New Buddy page (smiley tab): tap the robot for tips, jokes and verses; Water, Break, Focus (25 min),
+  Breathe; today's active time, breaks, water and focus sessions.
+- Morning greeting, and an end-of-day summary after 9pm.
+- Menu bar: Robot Check-ins (30 min / 1 h / 2 h / Off), Change My Name, App Notifications, Bible Verses.
