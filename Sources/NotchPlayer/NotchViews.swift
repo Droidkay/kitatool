@@ -338,6 +338,8 @@ struct PeekContent: View {
             return Info(symbol: "face.smiling", tint: .cyan, title: message, subtitle: "", useRobot: true)
         case .notification(let n):
             return Info(symbol: "bell.fill", tint: .white, title: n.title, subtitle: n.body)
+        case .copied(let text):
+            return Info(symbol: "doc.on.clipboard.fill", tint: .green, title: "Copied", subtitle: text)
         case .none:
             return Info(symbol: "circle", tint: .white, title: "", subtitle: "")
         }
@@ -437,7 +439,7 @@ struct ExpandedContent: View {
                             Image(systemName: p.symbol)
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(s.page == p ? Color.black : Color.white.opacity(0.7))
-                                .frame(width: 23, height: 22)
+                                .frame(width: 21, height: 22)
                                 .overlay(alignment: .topTrailing) {
                                     if p == .alerts && !s.notes.isEmpty && s.page != .alerts {
                                         Circle().fill(Color.red).frame(width: 6, height: 6).offset(x: -2, y: 2)
@@ -463,7 +465,7 @@ struct ExpandedContent: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .frame(height: s.geometry.notchH)
 
             Group {
@@ -471,6 +473,7 @@ struct ExpandedContent: View {
                 case .music: MusicPane(s: s)
                 case .buddy: BuddyPane(s: s, buddy: s.core.buddy)
                 case .alerts: AlertsPane(s: s)
+                case .clips: ClipsPane(link: s.core.clipsLink)
                 case .calendar: CalendarPane(s: s)
                 case .timer: TimerPane(s: s)
                 case .shelf: ShelfPane(s: s)

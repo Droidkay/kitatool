@@ -60,13 +60,14 @@ struct NotchGeometry {
 // MARK: - Small models
 
 enum NotchPage: Int, CaseIterable, Identifiable {
-    case music, buddy, alerts, calendar, timer, shelf
+    case music, buddy, alerts, clips, calendar, timer, shelf
     var id: Int { rawValue }
     var symbol: String {
         switch self {
         case .music: return "music.note"
         case .buddy: return "face.smiling"
         case .alerts: return "bell.badge"
+        case .clips: return "doc.on.clipboard"
         case .calendar: return "calendar"
         case .timer: return "timer"
         case .shelf: return "tray.full"
@@ -85,6 +86,7 @@ enum NotchPeek: Equatable {
     case robot(String)        // the companion robot says something
     case checkIn(String)      // the robot asks how you're doing
     case notification(NotchNote)
+    case copied(String)       // something was copied (from Kita Clips)
 }
 
 extension NotchPeek {
@@ -195,7 +197,28 @@ final class NotchState: ObservableObject {
         robotEnabled = d.object(forKey: "robotEnabled") as? Bool ?? true
         robot = RobotBrain()
         notesEnabled = d.object(forKey: "notesEnabled") as? Bool ?? true
+        clipBanners = d.object(forKey: "clipBanners") as? Bool ?? true
         buddy = Companion(core: self)
+        clipsLink.onNewCopy = { [weak self] c in
+            let me = self
+            MainActor.assumeIsolated { me?.showCopied(c) }
+        }
+    }
+
+    let clipsLink = ClipsLink()
+    @Published var clipBanners: Bool {
+        didSet { UserDefaults.standard.set(clipBanners, forKey: "clipBanners") }
+    }
+
+    private func showCopied(_ c: MiniClip) {
+        guard clipBanners else { return }
+        let preview: String
+        switch c.kind {
+        case "image": preview = "🖼 Image"
+        case "file": preview = "📄 " + (c.fileURLs.first?.lastPathComponent ?? "File")
+        default: preview = (c.text ?? "").replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
+        }
+        showPeek(.copied(String(preview.prefix(60))), seconds: 1.8)
     }
 
     // MARK: layout
@@ -261,6 +284,7 @@ final class NotchState: ObservableObject {
         pollMusic()
         if robotEnabled { robotTick() }
         if notesEnabled && tickCount % 2 == 0 { pollNotes() }
+        clipsLink.reload()
 
         if timerRunning {
             timerRemaining = max(0, Int(timerEnd.timeIntervalSinceNow.rounded(.up)))

@@ -134,6 +134,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         core.start()
         if CommandLine.arguments.contains("--demo") { runDemo() }
         if CommandLine.arguments.contains("--notes-test") { runNotesTest() }
+        if CommandLine.arguments.contains("--clips-demo") {
+            core.buddy.checkInMinutes = 0
+            let c = core
+            let ctrls = { [weak self] in self?.controllers ?? [] }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+                c.page = .clips
+                for ctl in ctrls() { ctl.setExpanded(true) }
+            }
+        }
         if CommandLine.arguments.contains("--moves") {
             core.buddy.checkInMinutes = 0
             let r = core.robot
@@ -266,7 +276,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ("Banners (songs, charging, events)", 3, core.peeksEnabled),
             ("Companion Robot", 4, core.robotEnabled),
             ("App Notifications in the Notch", 5, core.notesEnabled),
-            ("Bible Verses from the Robot", 6, core.buddy.verses)
+            ("Bible Verses from the Robot", 6, core.buddy.verses),
+            ("Show \"Copied\" in the Notch (Kita Clips)", 7, core.clipBanners)
         ]
         for (title, tag, on) in toggles {
             let item = NSMenuItem(title: title, action: #selector(toggleSetting(_:)), keyEquivalent: "")
@@ -312,6 +323,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case 4: core.robotEnabled.toggle(); sender.state = core.robotEnabled ? .on : .off
         case 5: core.notesEnabled.toggle(); sender.state = core.notesEnabled ? .on : .off
         case 6: core.buddy.verses.toggle(); sender.state = core.buddy.verses ? .on : .off
+        case 7: core.clipBanners.toggle(); sender.state = core.clipBanners ? .on : .off
         default: core.peeksEnabled.toggle(); sender.state = core.peeksEnabled ? .on : .off
         }
     }
