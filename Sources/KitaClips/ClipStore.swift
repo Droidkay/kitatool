@@ -10,6 +10,7 @@ final class ClipStore: ObservableObject {
     @Published var filter: ClipFilter = .all { didSet { resetSelection() } }
     @Published var selectedID: UUID?
     @Published var focusToken = 0
+    @Published var iconHidden = false
 
     @Published var paused = false
     @Published var maxItems: Int { didSet { defaults.set(maxItems, forKey: "maxItems"); prune(); save() } }
@@ -338,6 +339,9 @@ final class ClipStore: ObservableObject {
         enc.dateEncodingStrategy = .iso8601
         guard let data = try? enc.encode(clips) else { return }
         try? data.write(to: historyURL, options: .atomic)
+        // Lets Notch Player's Clips tab refresh straight away.
+        DistributedNotificationCenter.default().postNotificationName(
+            .init("com.droidkay.kitaclips.changed"), object: nil, userInfo: nil, deliverImmediately: true)
     }
 }
 

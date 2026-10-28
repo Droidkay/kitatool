@@ -23,6 +23,21 @@ struct ClipsView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if store.iconHidden {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "eye.slash.fill").foregroundStyle(.orange)
+                    Text("Your menu bar is full, so the Kita Clips icon is hiding behind the notch. Open Kita Clips with ⌃⌥V or from the Clips tab in Notch Player. To make room, ⌘-drag other menu bar icons off the bar.")
+                        .font(.system(size: 11.5))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button { store.iconHidden = false } label: { Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
+                        .buttonStyle(.plain)
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.14)))
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
+            }
             Divider().opacity(0.4)
             content
             Divider().opacity(0.4)

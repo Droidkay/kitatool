@@ -38,6 +38,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.start()
 
         buildStatusItem()
+        DistributedNotificationCenter.default().addObserver(
+            forName: .init("com.droidkay.kitaclips.show"), object: nil, queue: .main
+        ) { [weak self] _ in
+            let me = self
+            MainActor.assumeIsolated { me?.panel.show() }
+        }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            self.checkIconVisible()
+        }
         let p = panel
         hotKey.action = { p?.toggle() }
         hotKey.register(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(controlKey | optionKey))
@@ -71,6 +81,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.autosaveName = "KitaClipsStatusItem"
+        item.behavior = []
+        item.isVisible = true
         item.button?.target = self
         item.button?.action = #selector(statusClicked(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -117,6 +130,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let i = NSMenuItem(title: title, action: sel, keyEquivalent: "")
         i.target = self
         return i
+    }
+
+    /// On a MacBook with a notch, a full menu bar hides icons behind the notch.
+    /// If that happened to ours, say so and open the panel once so you're not left guessing.
+    private func checkIconVisible() {
+        guard let w = statusItem?.button?.window else {
+            store.iconHidden = true
+            return
+        }
+        let screen = w.screen ?? NSScreen.main
+        var hidden = !w.occlusionState.contains(.visible)
+        if let s = screen, let right = s.auxiliaryTopRightArea {
+            let rightAreaStart = s.frame.maxX - right.width
+            if w.frame.minX < rightAreaStart - 1 { hidden = true }
+        }
+        store.iconHidden = hidden
+        let key = "iconHiddenTipShown"
+        if hidden && !UserDefaults.standard.bool(forKey: key) {
+            UserDefaults.standard.set(true, forKey: key)
+            panel.show()
+        }
     }
 
     @objc private func openPanel() { panel.show() }
