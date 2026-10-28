@@ -1,0 +1,14 @@
+ProductName:		macOS
+ProductVersion:		14.8.9
+BuildVersion:		23J631
+swift-driver version: 1.90.11.1 Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+Target: arm64-apple-macosx14.0
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version-76B232A4806BA581.txt
+[3/5] Compiling NotchPlayer BuddyViews.swift
+[3/5] Write Objects.LinkFileList
+[4/5] Linking NotchPlayer
+Build complete! (21.74s)
+BUILD OK
+RUN OK
