@@ -122,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        LoginItem.enableOnFirstRun()
         rebuildScreens()
         buildStatusItem()
         installMonitors()
@@ -209,7 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLogin(_:)), keyEquivalent: "")
         login.target = self
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        login.state = LoginItem.isEnabled ? .on : .off
         menu.addItem(login)
         let toggles: [(String, Int, Bool)] = [
             ("Show Clock When Idle", 1, core.showIdleInfo),
@@ -233,13 +234,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleLogin(_ sender: NSMenuItem) {
-        if SMAppService.mainApp.status == .enabled {
-            try? SMAppService.mainApp.unregister()
-            sender.state = .off
-        } else {
-            try? SMAppService.mainApp.register()
-            sender.state = .on
-        }
+        if LoginItem.isEnabled { LoginItem.disable() } else { LoginItem.enable() }
+        sender.state = LoginItem.isEnabled ? .on : .off
     }
 
     @objc private func toggleSetting(_ sender: NSMenuItem) {

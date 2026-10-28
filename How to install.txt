@@ -1,0 +1,16 @@
+NOTCH PLAYER 3.3 — HOW TO INSTALL
+
+1. Quit the old Notch Player if it's running (menu bar icon > Quit Notch Player).
+2. Drag "Notch Player.app" from this folder into your Applications folder.
+   Choose Replace if it asks.
+3. Open it from Applications.
+   - "Apple could not verify..." -> click Done, then go to
+     System Settings > Privacy & Security, scroll down, click Open Anyway, then Open.
+   - "...is damaged and can't be opened" -> open Terminal, paste this, press Return:
+       xattr -cr "/Applications/Notch Player.app"
+     then open the app again.
+4. When macOS asks to let Notch Player control Spotify or Music, click OK.
+
+After this it opens by itself every time you restart or log in.
+macOS may show a "Background item added" notice once; that's this.
+To stop it, click the menu bar icon and untick Open at Login.

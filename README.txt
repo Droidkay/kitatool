@@ -23,3 +23,4 @@ New in 3.3 - Companion Robot
   gets happy when you charge, droops on low battery, and falls asleep (zzz) after 2 idle minutes.
 - It greets you when the app starts, says "All charged up" at 100%, and reminds you to stretch after an hour of use.
 - Turn it off from the menu bar icon: Companion Robot.
+- Opens by itself after a restart (Open at Login is on from the first run). Untick it in the menu bar icon to stop that.
