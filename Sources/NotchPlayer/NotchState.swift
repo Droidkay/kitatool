@@ -289,9 +289,11 @@ final class NotchState: ObservableObject {
         if peek.isImportant, peekTask != nil, p != peek {
             if case .volume = p {} else {
                 peekQueue.append((p, seconds))
+                if CommandLine.arguments.contains("--demo") { print("queued:", p); fflush(stdout) }
                 return
             }
         }
+        if CommandLine.arguments.contains("--demo") { print("peek:", p, Date()); fflush(stdout) }
         peek = p
         peekTask?.cancel()
         peekTask = Task {

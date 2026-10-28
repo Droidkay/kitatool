@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-26]
+        os: [macos-26]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -33,14 +33,14 @@ jobs:
           [ -f "$BIN" ] || exit 0
           "$BIN" --demo > demo.log 2>&1 & PID=$!
           sleep 5;  screencapture -x s1.png
-          sleep 9;  screencapture -x s2.png
-          sleep 9;  screencapture -x s3.png
-          if kill -0 $PID 2>/dev/null; then echo "RUN OK" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; tail -20 demo.log >> build.log; fi
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do sleep 1; screencapture -x n$i.png; done
+          sleep 5;  screencapture -x s3.png
+          if kill -0 $PID 2>/dev/null; then echo "RUN OK" >> build.log; kill $PID; else echo "RUN CRASHED" >> build.log; fi; echo '--- demo log' >> build.log; cat demo.log >> build.log
       - name: Publish result
         if: always()
         run: |
           mkdir -p /tmp/out && (cp build.log /tmp/out/ 2>/dev/null || echo "no log" > /tmp/out/build.log)
-          cp s1.png s2.png s3.png /tmp/out/ 2>/dev/null || true
+          cp s1.png n*.png s3.png /tmp/out/ 2>/dev/null || true
           cd /tmp/out && git init -q && git checkout -q -b r
           git config user.name ci && git config user.email ci@users.noreply.github.com
           git add -A && git commit -qm "result ${GITHUB_SHA}"
